@@ -104,13 +104,13 @@ export default function RisultatoPage() {
             <div className="flex items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/brand/logo regular light@600x.png"
+                src="/images/brand/logo-light.png"
                 alt="vibecar"
                 className="h-6 dark:block hidden"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/brand/logo regular@600x.png"
+                src="/images/brand/logo-dark.png"
                 alt="vibecar"
                 className="h-6 dark:hidden block"
               />
