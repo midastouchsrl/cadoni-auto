@@ -136,7 +136,7 @@ export default function RisultatoPage() {
 
           <ValuationResultDisplay
             result={result}
-            input={input as { brand: string; model: string; year: string; km: string; fuel: string; gearbox: string; region: string; condition: string }}
+            input={input as { brand: string; model: string; year: string; km: string; fuel: string; gearbox: string; condition: string }}
           />
 
           {/* Contact Form */}

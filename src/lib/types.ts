@@ -13,7 +13,6 @@ export interface CarValuationInput {
   km: number;              // Chilometraggio
   fuel: FuelType;          // Alimentazione
   gearbox: GearboxType;    // Cambio
-  region: string;          // Regione Italia
   condition?: ConditionType; // Condizione veicolo (opzionale)
 }
 
@@ -45,7 +44,6 @@ export interface ValuationResult {
   confidence: ConfidenceLevel;
   explanation: string;     // Spiegazione in italiano
   computed_from: {
-    region: string;
     year_window: [number, number]; // [anno_min, anno_max]
     km_window: [number, number];   // [km_min, km_max]
     filters_applied: string[];

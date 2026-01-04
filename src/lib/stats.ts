@@ -151,7 +151,6 @@ export function determineConfidence(
 export function generateExplanation(
   samples: number,
   confidence: ConfidenceLevel,
-  region: string,
   yearWindow: [number, number],
   kmWindow: [number, number],
   condition?: ConditionType
@@ -159,14 +158,7 @@ export function generateExplanation(
   const parts: string[] = [];
 
   // Campione
-  parts.push(`Valutazione basata su ${samples} annunci analizzati`);
-
-  // Area geografica
-  if (region === 'Italia') {
-    parts.push('in tutta Italia');
-  } else {
-    parts.push(`nella regione ${region}`);
-  }
+  parts.push(`Valutazione basata su ${samples} annunci analizzati in Italia`);
 
   // Finestre di ricerca
   parts.push(
@@ -226,7 +218,6 @@ export function extractValidPrices(listings: CarListing[]): number[] {
 export function computeValuation(
   listings: CarListing[],
   input: {
-    region: string;
     year: number;
     km: number;
     condition?: ConditionType;
@@ -277,7 +268,6 @@ export function computeValuation(
   const explanation = generateExplanation(
     cleanPrices.length,
     confidence,
-    input.region,
     [yearMin, yearMax],
     [kmMin, kmMax],
     input.condition
@@ -298,7 +288,6 @@ export function computeValuation(
     confidence,
     explanation,
     computed_from: {
-      region: input.region,
       year_window: [yearMin, yearMax],
       km_window: [kmMin, kmMax],
       filters_applied: filters,

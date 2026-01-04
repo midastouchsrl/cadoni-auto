@@ -43,30 +43,25 @@ export function validateInput(input: Partial<CarValuationInput>): {
     errors.push('Seleziona il tipo di cambio');
   }
 
-  if (!input.region) {
-    errors.push('Seleziona la regione');
-  }
-
   return {
     valid: errors.length === 0,
     errors,
   };
 }
 
+// Configurazione finestra allargata per fallback
+const EXTENDED_WINDOW = {
+  yearWindow: 2,        // ±2 anni invece di ±1
+  kmWindowPercent: 0.30, // ±30% invece di ±15%
+};
+
 /**
- * Esegue la valutazione completa
+ * Esegue la valutazione completa con fallback automatico
  */
 export async function performValuation(
   input: CarValuationInput
 ): Promise<ValuationResponse> {
   const config = DEFAULT_VALUATION_CONFIG;
-
-  // Calcola finestre di ricerca
-  const yearMin = input.year - config.yearWindow;
-  const yearMax = input.year + config.yearWindow;
-  const kmDelta = Math.round(input.km * config.kmWindowPercent);
-  const kmMin = Math.max(0, input.km - kmDelta);
-  const kmMax = input.km + kmDelta;
 
   // Controlla cache per risultato completo
   const resultCacheKey = `result:${generateCacheKey(input as unknown as Record<string, unknown>)}`;
@@ -77,8 +72,16 @@ export async function performValuation(
   }
 
   try {
-    // Fetch annunci
-    const listings = await fetchListingsMultiPage(
+    // STEP 1: Prova con finestra standard
+    const yearMin = input.year - config.yearWindow;
+    const yearMax = input.year + config.yearWindow;
+    const kmDelta = Math.round(input.km * config.kmWindowPercent);
+    const kmMin = Math.max(0, input.km - kmDelta);
+    const kmMax = input.km + kmDelta;
+
+    console.log(`[Valuation] Ricerca standard: anni ${yearMin}-${yearMax}, km ${kmMin}-${kmMax}`);
+
+    let listings = await fetchListingsMultiPage(
       input,
       yearMin,
       yearMax,
@@ -86,26 +89,71 @@ export async function performValuation(
       kmMax
     );
 
-    if (listings.length === 0) {
-      // Nessun annuncio trovato
-      return {
-        error: true,
-        message: 'Nessun annuncio trovato per questa ricerca.',
-        suggestion:
-          'Prova ad allargare i criteri: modello più generico o regione diversa.',
-      };
+    let usedExtendedWindow = false;
+
+    // STEP 2: Se pochi risultati, prova con finestra allargata
+    if (listings.length < 5) {
+      const extYearMin = input.year - EXTENDED_WINDOW.yearWindow;
+      const extYearMax = input.year + EXTENDED_WINDOW.yearWindow;
+      const extKmDelta = Math.round(input.km * EXTENDED_WINDOW.kmWindowPercent);
+      const extKmMin = Math.max(0, input.km - extKmDelta);
+      const extKmMax = input.km + extKmDelta;
+
+      console.log(`[Valuation] Pochi risultati (${listings.length}), allargo ricerca: anni ${extYearMin}-${extYearMax}, km ${extKmMin}-${extKmMax}`);
+
+      const extendedListings = await fetchListingsMultiPage(
+        input,
+        extYearMin,
+        extYearMax,
+        extKmMin,
+        extKmMax
+      );
+
+      if (extendedListings.length > listings.length) {
+        listings = extendedListings;
+        usedExtendedWindow = true;
+      }
     }
 
-    // Calcola valutazione
+    // STEP 3: Se ancora 0 risultati, il modello non è disponibile
+    if (listings.length === 0) {
+      // Prova a cercare solo il modello senza filtri anno/km per capire se esiste
+      const anyListings = await fetchListingsMultiPage(
+        input,
+        1990,
+        new Date().getFullYear() + 1,
+        0,
+        999999
+      );
+
+      if (anyListings.length === 0) {
+        return {
+          error: true,
+          message: `Nessun ${input.brand} ${input.model} trovato in Italia.`,
+          suggestion: 'Questo modello potrebbe non essere disponibile sul mercato italiano.',
+        };
+      } else {
+        return {
+          error: true,
+          message: 'Nessun annuncio corrisponde ai tuoi criteri.',
+          suggestion: `Esistono ${anyListings.length} annunci di ${input.brand} ${input.model} ma con anno/km diversi. Prova a modificare i parametri.`,
+        };
+      }
+    }
+
+    // Calcola valutazione con la config appropriata
+    const effectiveConfig = usedExtendedWindow
+      ? { ...config, yearWindow: EXTENDED_WINDOW.yearWindow, kmWindowPercent: EXTENDED_WINDOW.kmWindowPercent }
+      : config;
+
     const result = computeValuation(
       listings,
       {
-        region: input.region,
         year: input.year,
         km: input.km,
         condition: input.condition,
       },
-      config
+      effectiveConfig
     );
 
     if (!result) {
@@ -114,6 +162,14 @@ export async function performValuation(
         message: 'Impossibile calcolare la valutazione.',
         suggestion: 'I dati trovati non sono sufficienti per una stima affidabile.',
       };
+    }
+
+    // Aggiungi nota se usata finestra allargata
+    if (usedExtendedWindow) {
+      result.explanation = result.explanation.replace(
+        'Valutazione basata su',
+        'Valutazione basata su (con criteri allargati)'
+      );
     }
 
     // Salva in cache

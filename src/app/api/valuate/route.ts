@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
       km: parseInt(body.km, 10),
       fuel: body.fuel,
       gearbox: body.gearbox,
-      region: body.region,
       condition: body.condition || 'normale',
     };
 
@@ -79,7 +78,6 @@ export async function GET() {
       km: 50000,
       fuel: 'benzina',
       gearbox: 'manuale',
-      region: 'Lombardia',
       condition: 'normale',
     },
   });

@@ -9,7 +9,6 @@ import { useState, useMemo, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { CAR_MAKES } from '@/lib/autoscout-data';
 import {
-  REGIONI_ITALIA,
   FUEL_TYPES,
   GEARBOX_TYPES,
   CONDITION_TYPES,
@@ -36,7 +35,6 @@ export default function ValuationForm() {
   const [km, setKm] = useState('');
   const [fuel, setFuel] = useState('');
   const [gearbox, setGearbox] = useState('');
-  const [region, setRegion] = useState('');
   const [condition, setCondition] = useState('normale');
 
   // Models state
@@ -114,7 +112,6 @@ export default function ValuationForm() {
           km: parseInt(km.replace(/\D/g, ''), 10),
           fuel,
           gearbox,
-          region,
           condition,
         }),
       });
@@ -140,7 +137,6 @@ export default function ValuationForm() {
           km,
           fuel,
           gearbox,
-          region,
           condition
         })
       );
@@ -304,25 +300,6 @@ export default function ValuationForm() {
             ))}
           </select>
         </div>
-      </div>
-
-      {/* Region */}
-      <div className="space-y-2">
-        <label htmlFor="region">Regione</label>
-        <select
-          id="region"
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          required
-          className={region ? 'text-[var(--text-primary)]' : 'text-[var(--text-placeholder)]'}
-        >
-          <option value="" disabled>Seleziona regione</option>
-          {REGIONI_ITALIA.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Condition */}

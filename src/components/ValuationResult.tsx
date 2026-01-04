@@ -17,7 +17,6 @@ interface Props {
     km: string;
     fuel: string;
     gearbox: string;
-    region: string;
     condition: string;
   };
 }
@@ -78,7 +77,6 @@ export default function ValuationResultDisplay({ result, input }: Props) {
               <span className="w-1 h-1 rounded-full bg-[var(--obsidian-400)]" />
               <span className="capitalize">{input.fuel}</span>
             </div>
-            <p className="text-sm text-[var(--text-muted)] mt-1">{input.region}</p>
           </div>
         </div>
       </div>
@@ -243,9 +241,6 @@ export default function ValuationResultDisplay({ result, input }: Props) {
         </summary>
         <div className="px-5 pb-5 pt-2 border-t border-[var(--obsidian-600)]">
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <dt className="text-[var(--text-muted)]">Regione:</dt>
-            <dd className="text-[var(--text-primary)]">{result.computed_from.region}</dd>
-
             <dt className="text-[var(--text-muted)]">Anni cercati:</dt>
             <dd className="text-[var(--text-primary)]">
               {result.computed_from.year_window[0]} - {result.computed_from.year_window[1]}
