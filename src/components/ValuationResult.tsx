@@ -15,6 +15,7 @@ import {
   getEstimateTimeMs,
   generateShareUrl,
 } from '@/lib/analytics';
+import LeadForm from './LeadForm';
 
 /**
  * Format date in Italian format
@@ -507,8 +508,15 @@ export default function ValuationResultDisplay({ result, input }: Props) {
         </div>
       </div>
 
+      {/* Lead Form - GDPR compliant contact request */}
+      <LeadForm
+        confidence={result.confidence}
+        dealerGap={(result.p50 || result.market_median) - result.dealer_buy_price}
+        cached={result.cached}
+      />
+
       {/* Disclaimer */}
-      <div className="p-4 rounded-xl bg-[var(--obsidian-800)] border border-[var(--obsidian-700)] opacity-0 animate-fade-in-up animate-delay-500">
+      <div className="p-4 rounded-xl bg-[var(--obsidian-800)] border border-[var(--obsidian-700)] opacity-0 animate-fade-in-up animate-delay-550">
         <p className="text-xs text-[var(--text-muted)] leading-relaxed">
           <strong className="text-[var(--text-secondary)]">Disclaimer:</strong> Questa valutazione è puramente indicativa
           e basata su dati pubblici di mercato. Il valore effettivo può variare

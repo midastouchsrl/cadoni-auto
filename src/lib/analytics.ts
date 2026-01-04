@@ -419,6 +419,56 @@ export function trackEstimateFailed(props: EstimateEventProps, reason: string): 
 }
 
 // ============================================
+// LEAD FORM EVENTS (NO PII)
+// ============================================
+
+export interface LeadEventProps {
+  confidence: string;
+  dealer_gap_bucket: string;
+  cached: boolean;
+}
+
+/**
+ * Track: Lead form opened/viewed
+ */
+export function trackLeadFormOpened(props: LeadEventProps): void {
+  trackPostHog('lead_form_opened', {
+    confidence: props.confidence,
+    dealer_gap_bucket: props.dealer_gap_bucket,
+    cached: props.cached,
+  });
+}
+
+/**
+ * Track: Lead form submitted (NO PII - no email/phone/name)
+ */
+export function trackLeadSubmitted(props: LeadEventProps): void {
+  // Plausible goal
+  trackPlausible('lead_submitted', {
+    confidence: props.confidence,
+  });
+
+  // PostHog event (no PII)
+  trackPostHog('lead_submitted', {
+    confidence: props.confidence,
+    dealer_gap_bucket: props.dealer_gap_bucket,
+    cached: props.cached,
+  });
+}
+
+/**
+ * Get dealer gap bucket for analytics
+ */
+export function getDealerGapBucket(dealerGap: number): string {
+  if (dealerGap < 500) return '0-500';
+  if (dealerGap < 1000) return '500-1k';
+  if (dealerGap < 2000) return '1k-2k';
+  if (dealerGap < 3000) return '2k-3k';
+  if (dealerGap < 5000) return '3k-5k';
+  return '5k+';
+}
+
+// ============================================
 // VIRAL ATTRIBUTION
 // ============================================
 
