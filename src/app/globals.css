@@ -150,7 +150,9 @@ h1, h2, h3, h4, h5, h6 {
 select,
 input[type="text"],
 input[type="number"],
-input[type="email"] {
+input[type="email"],
+input[type="tel"],
+textarea {
   background: var(--obsidian-700);
   border: 1px solid var(--obsidian-500);
   border-radius: 12px;
@@ -163,18 +165,32 @@ input[type="email"] {
   -webkit-appearance: none;
 }
 
+/* Textarea specific */
+textarea {
+  min-height: 100px;
+  line-height: 1.5;
+}
+
 select:hover,
-input:hover {
+input:hover,
+textarea:hover {
   border-color: var(--obsidian-400);
   background: var(--obsidian-600);
 }
 
 select:focus,
-input:focus {
+input:focus,
+textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   background: var(--obsidian-600);
+}
+
+/* Textarea placeholder */
+textarea::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1;
 }
 
 /* Placeholder styling - CLEARLY DIFFERENT from filled text */
@@ -216,6 +232,20 @@ label {
   text-transform: uppercase;
   display: block;
   margin-bottom: 0.5rem;
+}
+
+/* Checkbox/Radio labels - no uppercase, normal text */
+label.checkbox-label,
+.checkbox-label {
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin-bottom: 0;
 }
 
 /* ============================================
@@ -283,6 +313,51 @@ label {
   border-color: #3b82f6;
   color: #60a5fa;
   background: rgba(59, 130, 246, 0.1);
+}
+
+/* Blue/Primary action button */
+.btn-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 1.125rem 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-blue::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-blue:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.35);
+}
+
+.btn-blue:hover::before {
+  opacity: 1;
+}
+
+.btn-blue:active {
+  transform: translateY(0);
+}
+
+.btn-blue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ============================================
