@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "@sentry/nextjs": "^10.32.1",
+    "@vercel/analytics": "^1.6.1",
     "next": "16.1.1",
+    "posthog-js": "^1.313.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

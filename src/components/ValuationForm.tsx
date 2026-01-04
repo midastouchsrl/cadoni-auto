@@ -13,6 +13,7 @@ import {
   GEARBOX_TYPES,
   CONDITION_TYPES,
 } from '@/lib/config';
+import { trackStartEstimate, startEstimateTiming, trackEstimateFailed } from '@/lib/analytics';
 
 // Pre-compute years at module level to avoid hydration mismatch
 const BASE_YEAR = 2026;
@@ -99,6 +100,18 @@ export default function ValuationForm() {
       return;
     }
 
+    // Track estimate start and begin timing
+    const estimateProps = {
+      brand: brandName,
+      model: modelName,
+      year: parseInt(year, 10),
+      km: parseInt(km.replace(/\D/g, ''), 10),
+      fuel,
+      gearbox,
+    };
+    trackStartEstimate(estimateProps);
+    startEstimateTiming();
+
     try {
       const response = await fetch('/api/valuate', {
         method: 'POST',
@@ -119,6 +132,7 @@ export default function ValuationForm() {
       const data = await response.json();
 
       if (data.error) {
+        trackEstimateFailed(estimateProps, data.message);
         setError(data.message + (data.suggestion ? ` ${data.suggestion}` : ''));
         setLoading(false);
         return;

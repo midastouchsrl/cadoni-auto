@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, DM_Sans } from "next/font/google";
+import { Suspense } from "react";
+import AnalyticsProvider from "@/components/AnalyticsProvider";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -54,13 +56,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || 'vibecar.it';
+
   return (
     <html lang="it" className="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Plausible Analytics - Privacy-friendly, no cookies */}
+        <script
+          defer
+          data-domain={plausibleDomain}
+          src="https://plausible.io/js/script.js"
+        />
       </head>
       <body className={`${outfit.variable} ${dmSans.variable} antialiased`}>
-        {children}
+        <Suspense fallback={null}>
+          <AnalyticsProvider>
+            {children}
+          </AnalyticsProvider>
+        </Suspense>
       </body>
     </html>
   );

@@ -2,11 +2,18 @@
 
 /**
  * VibeCar Valuation Result Display
- * Premium result visualization
+ * Premium result visualization with analytics tracking
  */
 
+import { useEffect } from 'react';
 import { ValuationResult } from '@/lib/types';
 import { formatPrice, formatNumber } from '@/lib/robust-stats';
+import {
+  trackEstimateCompleted,
+  trackShareClicked,
+  trackShareCompleted,
+  getEstimateTimeMs,
+} from '@/lib/analytics';
 
 /**
  * Format date in Italian format
@@ -40,6 +47,33 @@ interface Props {
 }
 
 export default function ValuationResultDisplay({ result, input }: Props) {
+  // Track estimate completion on mount
+  useEffect(() => {
+    trackEstimateCompleted({
+      brand: input.brand,
+      model: input.model,
+      year: parseInt(input.year, 10),
+      confidence: result.confidence,
+      n_used: result.samples,
+      cached: result.cached,
+      p50: result.p50 || result.market_median,
+      time_to_result_ms: getEstimateTimeMs(),
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Share tracking helper
+  const handleShare = (type: 'link' | 'image' | 'whatsapp') => {
+    const shareProps = {
+      type,
+      brand: input.brand,
+      model: input.model,
+      year: parseInt(input.year, 10),
+      confidence: result.confidence,
+    };
+    trackShareClicked(shareProps);
+    return shareProps;
+  };
+
   const confidenceBadge = {
     alta: {
       bg: 'bg-[var(--success-muted)]',
@@ -414,8 +448,11 @@ export default function ValuationResultDisplay({ result, input }: Props) {
           {/* Copy link button */}
           <button
             onClick={() => {
+              const shareProps = handleShare('link');
               const url = new URL(window.location.href);
+              url.searchParams.set('ref', 'share');
               navigator.clipboard.writeText(url.toString());
+              trackShareCompleted(shareProps);
               alert('Link copiato!');
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--obsidian-600)] hover:bg-[var(--obsidian-500)] border border-[var(--obsidian-500)] text-sm font-medium text-[var(--text-primary)] transition-colors"
@@ -429,8 +466,10 @@ export default function ValuationResultDisplay({ result, input }: Props) {
           {/* Download image button */}
           <button
             onClick={() => {
+              const shareProps = handleShare('image');
               const ogUrl = `/api/og?brand=${encodeURIComponent(input.brand)}&model=${encodeURIComponent(input.model)}&year=${input.year}&p50=${result.p50 || result.market_median}&p25=${result.p25 || result.range_min}&p75=${result.p75 || result.range_max}&samples=${result.samples}&confidence=${result.confidence}`;
               window.open(ogUrl, '_blank');
+              trackShareCompleted(shareProps);
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium text-white transition-colors"
           >
@@ -443,9 +482,13 @@ export default function ValuationResultDisplay({ result, input }: Props) {
           {/* WhatsApp share */}
           <button
             onClick={() => {
+              const shareProps = handleShare('whatsapp');
+              const shareUrl = new URL(window.location.href);
+              shareUrl.searchParams.set('ref', 'share');
               const text = `Ho valutato la mia ${input.brand} ${input.model} (${input.year}) su VibeCar: ${formatPrice(result.p50 || result.market_median)} (range ${formatPrice(result.p25 || result.range_min)} - ${formatPrice(result.p75 || result.range_max)})`;
-              const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`;
+              const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + shareUrl.toString())}`;
               window.open(url, '_blank');
+              trackShareCompleted(shareProps);
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-sm font-medium text-white transition-colors"
           >
