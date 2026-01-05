@@ -94,6 +94,9 @@ export async function upsertStats(input: QueryStatsInput): Promise<void> {
   const db = getDb();
   const ttlHours = input.ttlHours ?? 24;
 
+  // Calcola expires_at in JS per evitare problemi con parametri bind
+  const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
+
   await db`
     INSERT INTO query_stats (
       query_hash,
@@ -124,7 +127,7 @@ export async function upsertStats(input: QueryStatsInput): Promise<void> {
       ${input.nDealers ?? 0},
       ${input.nPrivate ?? 0},
       NOW(),
-      NOW() + INTERVAL '${ttlHours} hours'
+      ${expiresAt}
     )
     ON CONFLICT (query_hash) DO UPDATE SET
       filters_json = EXCLUDED.filters_json,
@@ -138,7 +141,7 @@ export async function upsertStats(input: QueryStatsInput): Promise<void> {
       n_dealers = EXCLUDED.n_dealers,
       n_private = EXCLUDED.n_private,
       updated_at = NOW(),
-      expires_at = NOW() + INTERVAL '${ttlHours} hours'
+      expires_at = ${expiresAt}
   `;
 }
 

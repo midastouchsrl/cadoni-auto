@@ -5,7 +5,7 @@
 
 import { CarValuationInput, ValuationResult, ValuationError, ValuationResponse, ConditionType } from './types';
 import { DEFAULT_VALUATION_CONFIG } from './config';
-import { fetchListingsMultiPage } from './datasource';
+import { aggregateListings, queueRequest } from './datasources';
 import { computeRobustStats, generateQueryHash, roundToMultiple } from './robust-stats';
 import { getCachedStats, upsertStats, QueryStatsInput } from './db';
 
@@ -43,39 +43,38 @@ function applyConditionAdjustment(price: number, condition?: ConditionType): num
 }
 
 /**
- * Genera spiegazione testuale
+ * Genera spiegazione testuale - user-friendly, senza riferimenti tecnici
  */
 function generateExplanation(
   input: CarValuationInput,
   stats: { nClean: number; nDealers: number; nPrivate: number; iqrRatio: number },
   yearWindow: [number, number],
-  kmWindow: [number, number],
-  strategyLabel: string,
-  cached: boolean
+  _kmWindow: [number, number],
+  _strategyLabel: string,
+  _cached: boolean
 ): string {
-  const parts: string[] = [];
+  // Costruisci una spiegazione semplice e orientata al valore
+  const vehicleDesc = `${input.brand} ${input.model}`;
+  const yearRange = yearWindow[0] === yearWindow[1]
+    ? `del ${yearWindow[0]}`
+    : `dal ${yearWindow[0]} al ${yearWindow[1]}`;
 
-  parts.push(`Valutazione basata su ${stats.nClean} annunci`);
+  // Messaggio principale semplice
+  let explanation = `Abbiamo analizzato ${stats.nClean} ${vehicleDesc} ${yearRange} attualmente in vendita in Italia`;
 
-  if (stats.nDealers > 0 || stats.nPrivate > 0) {
+  // Aggiungi contesto sulla tipologia di venditori solo se significativo
+  if (stats.nDealers > 0 && stats.nPrivate > 0) {
     const dealerPct = Math.round((stats.nDealers / (stats.nDealers + stats.nPrivate)) * 100);
-    parts.push(`(${dealerPct}% concessionari, ${100 - dealerPct}% privati)`);
+    if (dealerPct >= 70) {
+      explanation += ', prevalentemente da concessionari';
+    } else if (dealerPct <= 30) {
+      explanation += ', prevalentemente da privati';
+    }
   }
 
-  parts.push(`per ${input.brand} ${input.model}`);
-  parts.push(`anni ${yearWindow[0]}-${yearWindow[1]}`);
-  parts.push(`km ${kmWindow[0].toLocaleString('it-IT')}-${kmWindow[1].toLocaleString('it-IT')}`);
-  parts.push(`${input.fuel}, cambio ${input.gearbox}.`);
+  explanation += '.';
 
-  if (strategyLabel !== 'stretta') {
-    parts.push(`(Ricerca ${strategyLabel})`);
-  }
-
-  if (cached) {
-    parts.push('Dati da cache.');
-  }
-
-  return parts.join(' ');
+  return explanation;
 }
 
 /**
@@ -148,20 +147,27 @@ export async function getOrComputeEstimate(
       // Continua senza cache
     }
 
-    // STEP 2: Scrape fresh data
-    console.log(`[Estimate] Scraping fresh data...`);
-    const listings = await fetchListingsMultiPage(
-      input,
+    // STEP 2: Fetch data via aggregator (cache-first, AutoScout24 primario)
+    console.log(`[Estimate] Fetching via aggregator...`);
+    const aggregated = await aggregateListings(input, {
       yearMin,
       yearMax,
       kmMin,
       kmMax,
-      5 // max 5 pagine
-    );
+      maxPages: 5,
+    });
+
+    const listings = aggregated.listings;
+    console.log(`[Estimate] Aggregator: ${listings.length} listing da ${Object.keys(aggregated.sources).join(', ')}`);
 
     if (listings.length === 0) {
       console.log(`[Estimate] Nessun risultato per strategia "${strategy.label}"`);
       continue; // Prova strategia successiva
+    }
+
+    // Se pochi risultati, l'aggregator ha già accodato richieste per fonti secondarie
+    if (listings.length < 10 && !aggregated.enriched) {
+      console.log(`[Estimate] Pochi risultati, richieste secondarie accodate per background`);
     }
 
     // STEP 3: Calcola statistiche robuste
@@ -248,14 +254,14 @@ export async function getOrComputeEstimate(
 
   // STEP 6: Nessun risultato con nessuna strategia
   // Verifica se il modello esiste
-  const anyListings = await fetchListingsMultiPage(
-    input,
-    1990,
-    new Date().getFullYear() + 1,
-    0,
-    999999,
-    1 // Solo 1 pagina
-  );
+  const anyResult = await aggregateListings(input, {
+    yearMin: 1990,
+    yearMax: new Date().getFullYear() + 1,
+    kmMin: 0,
+    kmMax: 999999,
+    maxPages: 1,
+  });
+  const anyListings = anyResult.listings;
 
   if (anyListings.length === 0) {
     return {

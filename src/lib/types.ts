@@ -95,6 +95,7 @@ export interface CarListing {
   firstRegistration: string; // MM-YYYY
   fuelType: string;       // Codice (b,d,l,m,e,2,3)
   sellerType: 'd' | 'p';  // Dealer o Privato
+  source?: string;        // Fonte dati (autoscout24, subito, ecc.)
 
   // Campi legacy per retrocompatibilita
   year: number;
