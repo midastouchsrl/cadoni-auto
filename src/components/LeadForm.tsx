@@ -269,7 +269,7 @@ export default function LeadForm({ confidence, dealerGap, cached }: LeadFormProp
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="mt-0.5 w-5 h-5 rounded border-[var(--obsidian-400)] bg-[var(--obsidian-700)] text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer flex-shrink-0"
+              className="mt-0.5 w-5 h-5 rounded border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-200 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer flex-shrink-0"
             />
             <span className="text-[var(--text-secondary)] leading-relaxed">
               {CONSENT_TEXT}{' '}

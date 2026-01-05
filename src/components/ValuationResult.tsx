@@ -248,45 +248,48 @@ export default function ValuationResultDisplay({ result, input }: Props) {
             </div>
 
             {/* Range bar visual - Multi-color gradient */}
-            <div className="relative mb-6">
-              {/* Track with gradient range */}
-              <div className="h-4 rounded-full bg-slate-800/80 border border-slate-600/50 overflow-hidden relative">
+            <div className="relative mb-6 pt-2">
+              {/* Track container - allows markers to extend above/below */}
+              <div className="relative h-3">
+                {/* Background track */}
+                <div className="absolute inset-0 rounded-full bg-slate-800/80 border border-slate-600/50" />
+
                 {/* Multi-color gradient fill - blue to emerald to amber */}
                 <div
-                  className="absolute h-full bg-gradient-to-r from-blue-500 via-emerald-400 to-amber-500 rounded-full shadow-lg"
+                  className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-emerald-400 to-amber-500 rounded-full shadow-lg"
                   style={{
-                    left: `${Math.max(0, rangeMinPos - 2)}%`,
-                    width: `${Math.min(100, rangeMaxPos - rangeMinPos + 4)}%`,
+                    left: `${rangeMinPos}%`,
+                    width: `${rangeMaxPos - rangeMinPos}%`,
                   }}
                 />
 
                 {/* Min marker (blue) */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-5 bg-blue-400 rounded-sm border border-white/50 shadow-lg"
+                  className="absolute top-1/2 w-2.5 h-4 bg-blue-400 rounded-sm border border-white/60 shadow-md"
                   style={{ left: `${rangeMinPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
                 />
 
                 {/* Central marker (emerald) - larger, prominent */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-5 h-6 bg-white rounded-sm shadow-[0_0_15px_rgba(52,211,153,0.8)] border-2 border-emerald-400 z-10"
+                  className="absolute top-1/2 w-4 h-5 bg-white rounded-sm shadow-[0_0_12px_rgba(52,211,153,0.7)] border-2 border-emerald-400 z-10"
                   style={{ left: `${centralPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
                 />
 
                 {/* Max marker (amber) */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-5 bg-amber-400 rounded-sm border border-white/50 shadow-lg"
+                  className="absolute top-1/2 w-2.5 h-4 bg-amber-400 rounded-sm border border-white/60 shadow-md"
                   style={{ left: `${rangeMaxPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
                 />
               </div>
 
               {/* Range labels with colors */}
-              <div className="flex justify-between items-start mt-4">
+              <div className="flex justify-between items-start mt-5">
                 <div className="text-left">
                   <div className="text-lg font-bold text-blue-300">{formatPrice(rangeMin)}</div>
                   <div className="text-xs text-blue-400/80">Vendita rapida</div>
                 </div>
-                <div className="text-center -mt-1">
-                  <div className="text-xs text-emerald-400/80 mb-1">Il più probabile</div>
+                <div className="text-center">
+                  <div className="text-xs text-emerald-400/80">Valore di riferimento</div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-amber-300">{formatPrice(rangeMax)}</div>
