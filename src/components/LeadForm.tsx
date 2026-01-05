@@ -27,9 +27,15 @@ interface LeadFormProps {
   confidence: string;
   dealerGap: number;
   cached: boolean;
+  carInfo: {
+    brand: string;
+    model: string;
+    year: string;
+    valuation: string;
+  };
 }
 
-export default function LeadForm({ confidence, dealerGap, cached }: LeadFormProps) {
+export default function LeadForm({ confidence, dealerGap, cached, carInfo }: LeadFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -82,6 +88,7 @@ export default function LeadForm({ confidence, dealerGap, cached }: LeadFormProp
           estimate_id: context?.estimate_id || 'unknown',
           anon_id: anonId,
           consent_given: consent,
+          car_info: carInfo,
         }),
       });
 

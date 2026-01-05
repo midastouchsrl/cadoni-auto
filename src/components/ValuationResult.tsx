@@ -476,6 +476,12 @@ export default function ValuationResultDisplay({ result, input }: Props) {
         confidence={result.confidence}
         dealerGap={centralValue - professionalChannel}
         cached={result.cached}
+        carInfo={{
+          brand: input.brand,
+          model: input.model,
+          year: input.year,
+          valuation: formatPrice(centralValue),
+        }}
       />
 
       {/* ============================================
