@@ -11,7 +11,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
-import * as Brevo from '@getbrevo/brevo';
 
 // Consent text (must match frontend exactly)
 const CONSENT_TEXT =
@@ -57,7 +56,7 @@ function sanitize(text: string): string {
   return text.trim().slice(0, 500);
 }
 
-// Send email notification via Brevo
+// Send email notification via Brevo REST API
 async function sendEmailNotification(lead: {
   name: string;
   email: string;
@@ -75,9 +74,6 @@ async function sendEmailNotification(lead: {
   }
 
   try {
-    const apiInstance = new Brevo.TransactionalEmailsApi();
-    apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, apiKey);
-
     const carInfo = lead.car_info
       ? `${lead.car_info.brand} ${lead.car_info.model} (${lead.car_info.year}) - Valutazione: ${lead.car_info.valuation}`
       : 'Non disponibile';
@@ -164,16 +160,32 @@ ID Stima: ${lead.estimate_id}
 L'utente ha acconsentito al trattamento dei dati secondo la privacy policy.
     `.trim();
 
-    const sendSmtpEmail = new Brevo.SendSmtpEmail();
-    sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
-    sendSmtpEmail.to = [{ email: NOTIFICATION_EMAIL, name: 'VibeCar Team' }];
-    sendSmtpEmail.replyTo = { email: lead.email, name: lead.name };
-    sendSmtpEmail.subject = `[VibeCar] Nuova richiesta: ${lead.name}`;
-    sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.textContent = textContent;
+    // Use Brevo REST API directly (more reliable in serverless)
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        to: [{ email: NOTIFICATION_EMAIL, name: 'VibeCar Team' }],
+        replyTo: { email: lead.email, name: lead.name },
+        subject: `[VibeCar] Nuova richiesta: ${lead.name}`,
+        htmlContent: htmlContent,
+        textContent: textContent,
+      }),
+    });
 
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log(`[Lead API] Email notification sent for ${lead.estimate_id}`);
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`[Lead API] Brevo API error: ${response.status} - ${errorData}`);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log(`[Lead API] Email sent for ${lead.estimate_id}, messageId: ${result.messageId}`);
     return true;
   } catch (error) {
     console.error('[Lead API] Email send error:', error);
@@ -277,8 +289,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Lead API] Lead saved for estimate ${body.estimate_id}`);
 
-    // Send email notification (non-blocking, don't fail if email fails)
-    sendEmailNotification({
+    // Send email notification (await to ensure it completes in serverless)
+    const emailSent = await sendEmailNotification({
       name: sanitizedName,
       email: sanitizedEmail,
       phone: sanitizedPhone,
@@ -286,9 +298,11 @@ export async function POST(request: NextRequest) {
       message: sanitizedMessage || undefined,
       estimate_id: body.estimate_id,
       car_info: body.car_info,
-    }).catch((err) => {
-      console.error('[Lead API] Background email error:', err);
     });
+
+    if (!emailSent) {
+      console.warn(`[Lead API] Email not sent for ${body.estimate_id}, but lead saved`);
+    }
 
     return NextResponse.json({
       success: true,
