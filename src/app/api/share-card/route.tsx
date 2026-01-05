@@ -26,9 +26,6 @@ export async function GET(request: NextRequest) {
   const p50 = searchParams.get('p50') || '0';
   const p25 = searchParams.get('p25') || '0';
   const p75 = searchParams.get('p75') || '0';
-  const samples = searchParams.get('samples') || '0';
-  const confidence = searchParams.get('confidence') || 'media';
-
   // Format price
   const formatPrice = (price: string) => {
     const num = parseInt(price, 10);
@@ -42,15 +39,6 @@ export async function GET(request: NextRequest) {
     if (isNaN(num)) return '0 km';
     return `${num.toLocaleString('it-IT')} km`;
   };
-
-  // Precision config - marketing-friendly labels with brand colors
-  const precisionConfig: Record<string, { bg: string; text: string; label: string }> = {
-    alta: { bg: '#065f46', text: BRAND_TEAL, label: 'Precisione elevata' },
-    media: { bg: '#854d0e', text: '#fbbf24', label: 'Buona precisione' },
-    bassa: { bg: '#991b1b', text: '#f87171', label: 'Stima indicativa' },
-  };
-
-  const conf = precisionConfig[confidence] || precisionConfig.media;
 
   return new ImageResponse(
     (
@@ -69,10 +57,10 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            top: '-200px',
-            right: '-200px',
-            width: '600px',
-            height: '600px',
+            top: '-300px',
+            right: '-300px',
+            width: '900px',
+            height: '900px',
             borderRadius: '50%',
             background: `radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, transparent 70%)`,
           }}
@@ -80,10 +68,10 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            bottom: '-100px',
-            left: '-100px',
-            width: '400px',
-            height: '400px',
+            bottom: '-150px',
+            left: '-150px',
+            width: '600px',
+            height: '600px',
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)',
           }}
@@ -93,16 +81,16 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            top: '60px',
-            right: '60px',
+            top: '90px',
+            right: '90px',
             display: 'flex',
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${baseUrl}/images/brand/badge-dark.png`}
-            width="80"
-            height="80"
+            width="120"
+            height="120"
             alt=""
           />
         </div>
@@ -112,36 +100,36 @@ export async function GET(request: NextRequest) {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            paddingTop: '80px',
-            paddingBottom: '40px',
+            paddingTop: '120px',
+            paddingBottom: '60px',
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${baseUrl}/images/brand/logo-light.png`}
-            height="56"
+            height="84"
             alt="vibecar"
           />
         </div>
 
         {/* Spacer */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 60px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 90px' }}>
           {/* Car info */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              marginBottom: '48px',
+              marginBottom: '72px',
             }}
           >
             <span
               style={{
                 color: '#9ca3af',
-                fontSize: '24px',
+                fontSize: '36px',
                 textTransform: 'uppercase',
-                letterSpacing: '4px',
-                marginBottom: '16px',
+                letterSpacing: '6px',
+                marginBottom: '24px',
               }}
             >
               Valutazione
@@ -149,7 +137,7 @@ export async function GET(request: NextRequest) {
             <span
               style={{
                 color: 'white',
-                fontSize: '56px',
+                fontSize: '84px',
                 fontWeight: 700,
                 textAlign: 'center',
                 lineHeight: 1.1,
@@ -161,17 +149,17 @@ export async function GET(request: NextRequest) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
-                marginTop: '20px',
+                gap: '24px',
+                marginTop: '30px',
               }}
             >
-              <span style={{ color: '#6b7280', fontSize: '28px' }}>{year}</span>
-              <span style={{ color: '#374151', fontSize: '28px' }}>•</span>
-              <span style={{ color: '#6b7280', fontSize: '28px' }}>{formatKm(km)}</span>
+              <span style={{ color: '#94a3b8', fontSize: '42px' }}>{year}</span>
+              <span style={{ color: '#475569', fontSize: '42px' }}>•</span>
+              <span style={{ color: '#94a3b8', fontSize: '42px' }}>{formatKm(km)}</span>
               {fuel && (
                 <>
-                  <span style={{ color: '#374151', fontSize: '28px' }}>•</span>
-                  <span style={{ color: '#6b7280', fontSize: '28px', textTransform: 'capitalize' }}>{fuel}</span>
+                  <span style={{ color: '#475569', fontSize: '42px' }}>•</span>
+                  <span style={{ color: '#94a3b8', fontSize: '42px', textTransform: 'capitalize' }}>{fuel}</span>
                 </>
               )}
             </div>
@@ -183,28 +171,28 @@ export async function GET(request: NextRequest) {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              padding: '48px 80px',
-              borderRadius: '32px',
+              padding: '72px 120px',
+              borderRadius: '48px',
               background: `linear-gradient(135deg, ${BRAND_TEAL}, #14b8a6, #0d9488)`,
-              marginBottom: '40px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              marginBottom: '60px',
+              boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.5)',
             }}
           >
             <span
               style={{
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: '22px',
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: '33px',
                 textTransform: 'uppercase',
-                letterSpacing: '3px',
-                marginBottom: '12px',
+                letterSpacing: '5px',
+                marginBottom: '18px',
               }}
             >
-              Prezzo consigliato
+              Valore di mercato
             </span>
             <span
               style={{
                 color: 'white',
-                fontSize: '80px',
+                fontSize: '120px',
                 fontWeight: 700,
                 lineHeight: 1,
               }}
@@ -217,58 +205,20 @@ export async function GET(request: NextRequest) {
           <div
             style={{
               display: 'flex',
-              gap: '48px',
-              marginBottom: '48px',
+              gap: '72px',
+              marginBottom: '72px',
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ color: '#6b7280', fontSize: '20px', marginBottom: '4px' }}>Minimo</span>
-              <span style={{ color: '#60a5fa', fontSize: '36px', fontWeight: 600 }}>{formatPrice(p25)}</span>
+              <span style={{ color: '#94a3b8', fontSize: '30px', marginBottom: '6px' }}>Minimo</span>
+              <span style={{ color: '#60a5fa', fontSize: '54px', fontWeight: 600 }}>{formatPrice(p25)}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ color: '#6b7280', fontSize: '20px', marginBottom: '4px' }}>Massimo</span>
-              <span style={{ color: '#fbbf24', fontSize: '36px', fontWeight: 600 }}>{formatPrice(p75)}</span>
+              <span style={{ color: '#94a3b8', fontSize: '30px', marginBottom: '6px' }}>Massimo</span>
+              <span style={{ color: '#fbbf24', fontSize: '54px', fontWeight: 600 }}>{formatPrice(p75)}</span>
             </div>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 24px',
-                borderRadius: '9999px',
-                background: 'rgba(255,255,255,0.1)',
-              }}
-            >
-              <span style={{ color: '#9ca3af', fontSize: '22px' }}>Basato su</span>
-              <span style={{ color: 'white', fontSize: '22px', fontWeight: 600 }}>{samples} veicoli</span>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 24px',
-                borderRadius: '9999px',
-                background: conf.bg,
-              }}
-            >
-              <div
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '9999px',
-                  background: conf.text,
-                }}
-              />
-              <span style={{ color: conf.text, fontSize: '22px', fontWeight: 500 }}>
-                {conf.label}
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Footer CTA */}
@@ -277,30 +227,30 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            paddingBottom: '80px',
-            paddingTop: '40px',
+            paddingBottom: '120px',
+            paddingTop: '60px',
           }}
         >
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              padding: '16px 32px',
-              borderRadius: '16px',
+              gap: '18px',
+              padding: '24px 48px',
+              borderRadius: '24px',
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.1)',
             }}
           >
-            <span style={{ color: '#9ca3af', fontSize: '24px' }}>Valuta anche la tua su</span>
-            <span style={{ color: BRAND_TEAL, fontSize: '24px', fontWeight: 600 }}>vibecar.it</span>
+            <span style={{ color: '#94a3b8', fontSize: '36px' }}>Valuta anche la tua su</span>
+            <span style={{ color: BRAND_TEAL, fontSize: '36px', fontWeight: 600 }}>vibecar.it</span>
           </div>
         </div>
       </div>
     ),
     {
-      width: 1080,
-      height: 1920,
+      width: 1620,
+      height: 2880,
     }
   );
 }
