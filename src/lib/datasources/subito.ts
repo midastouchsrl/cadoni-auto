@@ -360,9 +360,8 @@ export class SubitoAdapter implements DataSourceAdapter {
           get: () => undefined,
         });
         // Override permissions
-        const originalQuery = window.navigator.permissions.query;
-        // @ts-ignore
-        window.navigator.permissions.query = (parameters: { name: string }) =>
+        const originalQuery = window.navigator.permissions.query.bind(window.navigator.permissions);
+        window.navigator.permissions.query = (parameters: PermissionDescriptor) =>
           parameters.name === 'notifications'
             ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
             : originalQuery(parameters);

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       brand,
       model,
       year,
-      mileage: 80000,
+      km: 80000,
       fuel: 'benzina',
       gearbox: 'manuale',
     };
