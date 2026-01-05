@@ -19,7 +19,7 @@ const CONSENT_TEXT =
 
 // Email configuration
 const NOTIFICATION_EMAIL = 'info@vibecar.it';
-const SENDER_EMAIL = 'noreply@vibecar.it';
+const SENDER_EMAIL = 'info@vibecar.it';
 const SENDER_NAME = 'VibeCar';
 
 interface LeadRequest {
