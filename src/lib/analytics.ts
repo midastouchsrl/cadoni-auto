@@ -528,12 +528,13 @@ export function trackReferralSource(): void {
 
 /**
  * Generate share URL with attribution params
+ * Points directly to /risultato?sid=xxx for immediate result viewing
  */
 export function generateShareUrl(baseUrl?: string): string {
   const context = getEstimateContext();
-  const url = new URL(baseUrl || window.location.origin);
+  const base = baseUrl || window.location.origin;
+  const url = new URL('/risultato', base);
 
-  url.searchParams.set('ref', 'share');
   if (context?.estimate_id) {
     url.searchParams.set('sid', context.estimate_id);
   }

@@ -189,3 +189,122 @@ export async function checkDbConnection(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Interfaccia per record estimate
+ */
+export interface EstimateRecord {
+  estimate_id: string;
+  anon_id: string;
+  query_hash: string;
+  filters_json: Record<string, unknown>;
+  n_total: number;
+  n_used: number;
+  confidence: string;
+  cached: boolean;
+  p25: number;
+  p50: number;
+  p75: number;
+  dealer_price: number;
+  dealer_gap: number;
+  iqr_ratio: number;
+  relaxations?: Record<string, unknown>;
+  origin_ref?: string;
+  origin_sid?: string;
+  created_at: Date;
+}
+
+/**
+ * Input per salvare un estimate
+ */
+export interface SaveEstimateInput {
+  estimateId: string;
+  anonId: string;
+  queryHash: string;
+  filters: Record<string, unknown>;
+  nTotal: number;
+  nUsed: number;
+  confidence: string;
+  cached: boolean;
+  p25: number;
+  p50: number;
+  p75: number;
+  dealerPrice: number;
+  dealerGap: number;
+  iqrRatio: number;
+  relaxations?: Record<string, unknown>;
+  originRef?: string;
+  originSid?: string;
+}
+
+/**
+ * Salva un estimate nel database
+ */
+export async function saveEstimate(input: SaveEstimateInput): Promise<void> {
+  const db = getDb();
+
+  await db`
+    INSERT INTO estimates (
+      estimate_id,
+      anon_id,
+      query_hash,
+      filters_json,
+      n_total,
+      n_used,
+      confidence,
+      cached,
+      p25,
+      p50,
+      p75,
+      dealer_price,
+      dealer_gap,
+      iqr_ratio,
+      relaxations,
+      origin_ref,
+      origin_sid
+    ) VALUES (
+      ${input.estimateId}::uuid,
+      ${input.anonId},
+      ${input.queryHash},
+      ${JSON.stringify(input.filters)},
+      ${input.nTotal},
+      ${input.nUsed},
+      ${input.confidence},
+      ${input.cached},
+      ${input.p25},
+      ${input.p50},
+      ${input.p75},
+      ${input.dealerPrice},
+      ${input.dealerGap},
+      ${input.iqrRatio},
+      ${input.relaxations ? JSON.stringify(input.relaxations) : null},
+      ${input.originRef || 'organic'},
+      ${input.originSid ? `${input.originSid}` : null}
+    )
+    ON CONFLICT (estimate_id) DO UPDATE SET
+      cached = EXCLUDED.cached,
+      p25 = EXCLUDED.p25,
+      p50 = EXCLUDED.p50,
+      p75 = EXCLUDED.p75
+  `;
+}
+
+/**
+ * Recupera un estimate dal database per ID
+ */
+export async function getEstimateById(estimateId: string): Promise<EstimateRecord | null> {
+  const db = getDb();
+
+  const result = await db`
+    SELECT *
+    FROM estimates
+    WHERE estimate_id = ${estimateId}::uuid
+    LIMIT 1
+  ` as unknown as EstimateRecord[];
+
+  if (!result || result.length === 0) {
+    return null;
+  }
+
+  return result[0];
+}

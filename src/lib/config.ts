@@ -121,6 +121,30 @@ export const FUEL_CODE_TO_LABEL: Record<string, { value: string; label: string }
   'O': { value: 'altro', label: 'Altro' },
 };
 
+// Regioni italiane
+export const ITALIAN_REGIONS = [
+  { value: 'abruzzo', label: 'Abruzzo' },
+  { value: 'basilicata', label: 'Basilicata' },
+  { value: 'calabria', label: 'Calabria' },
+  { value: 'campania', label: 'Campania' },
+  { value: 'emilia-romagna', label: 'Emilia-Romagna' },
+  { value: 'friuli-venezia-giulia', label: 'Friuli-Venezia Giulia' },
+  { value: 'lazio', label: 'Lazio' },
+  { value: 'liguria', label: 'Liguria' },
+  { value: 'lombardia', label: 'Lombardia' },
+  { value: 'marche', label: 'Marche' },
+  { value: 'molise', label: 'Molise' },
+  { value: 'piemonte', label: 'Piemonte' },
+  { value: 'puglia', label: 'Puglia' },
+  { value: 'sardegna', label: 'Sardegna' },
+  { value: 'sicilia', label: 'Sicilia' },
+  { value: 'toscana', label: 'Toscana' },
+  { value: 'trentino-alto-adige', label: 'Trentino-Alto Adige' },
+  { value: 'umbria', label: 'Umbria' },
+  { value: 'valle-d-aosta', label: "Valle d'Aosta" },
+  { value: 'veneto', label: 'Veneto' },
+] as const;
+
 // Cache settings
 export const CACHE_CONFIG = {
   // Cache HTTP: 24 ore + 1 ora stale-while-revalidate

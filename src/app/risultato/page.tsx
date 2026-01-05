@@ -3,10 +3,13 @@
 /**
  * VibeCar Results Page
  * Premium valuation results display
+ * Supports loading from:
+ * - sessionStorage (normal flow)
+ * - URL parameter ?sid=<estimate_id> (shared link)
  */
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ValuationResultDisplay from '@/components/ValuationResult';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -14,27 +17,63 @@ import { ValuationResult } from '@/lib/types';
 
 export default function RisultatoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [result, setResult] = useState<ValuationResult | null>(null);
   const [input, setInput] = useState<Record<string, string> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSharedView, setIsSharedView] = useState(false);
 
   useEffect(() => {
-    const storedResult = sessionStorage.getItem('vibecar_result');
-    const storedInput = sessionStorage.getItem('vibecar_input');
+    const loadResult = async () => {
+      // Check for shared estimate ID in URL
+      const sid = searchParams.get('sid');
 
-    if (!storedResult || !storedInput) {
-      router.replace('/');
-      return;
-    }
+      if (sid) {
+        // Load from API (shared link)
+        setIsSharedView(true);
+        try {
+          const response = await fetch(`/api/estimate/${sid}`);
+          const data = await response.json();
 
-    try {
-      setResult(JSON.parse(storedResult));
-      setInput(JSON.parse(storedInput));
-      setLoading(false);
-    } catch {
-      router.replace('/');
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+          if (data.error) {
+            setError(data.message || 'Valutazione non trovata');
+            setLoading(false);
+            return;
+          }
+
+          // Set result and input from API response
+          setResult(data);
+          setInput(data.input);
+          setLoading(false);
+        } catch (err) {
+          console.error('Error loading shared estimate:', err);
+          setError('Impossibile caricare la valutazione');
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Load from sessionStorage (normal flow)
+      const storedResult = sessionStorage.getItem('vibecar_result');
+      const storedInput = sessionStorage.getItem('vibecar_input');
+
+      if (!storedResult || !storedInput) {
+        router.replace('/');
+        return;
+      }
+
+      try {
+        setResult(JSON.parse(storedResult));
+        setInput(JSON.parse(storedInput));
+        setLoading(false);
+      } catch {
+        router.replace('/');
+      }
+    };
+
+    loadResult();
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -62,6 +101,31 @@ export default function RisultatoPage() {
             </div>
           </div>
           <p className="text-[var(--text-secondary)]">Caricamento risultati...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state (shared estimate not found)
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="gradient-orb gradient-orb-teal w-[500px] h-[500px] top-[20%] right-[10%] fixed" />
+
+        <div className="text-center max-w-md mx-auto px-6">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6">
+            <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Valutazione non disponibile</h2>
+          <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+          <Link href="/" className="btn-primary inline-flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Fai una nuova valutazione
+          </Link>
         </div>
       </div>
     );

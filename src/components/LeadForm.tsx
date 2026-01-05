@@ -39,6 +39,7 @@ export default function LeadForm({ confidence, dealerGap, cached }: LeadFormProp
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('');
   const [message, setMessage] = useState('');
   const [consent, setConsent] = useState(false);
 
@@ -76,6 +77,7 @@ export default function LeadForm({ confidence, dealerGap, cached }: LeadFormProp
           name,
           email,
           phone,
+          city: city || undefined,
           message: message || undefined,
           estimate_id: context?.estimate_id || 'unknown',
           anon_id: anonId,
@@ -219,6 +221,21 @@ export default function LeadForm({ confidence, dealerGap, cached }: LeadFormProp
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+39 333 1234567"
             required
+            className="w-full"
+          />
+        </div>
+
+        {/* City (optional) */}
+        <div className="space-y-1.5">
+          <label htmlFor="lead-city" className="text-sm font-medium text-[var(--text-secondary)]">
+            Città <span className="text-[var(--text-muted)]">(opzionale)</span>
+          </label>
+          <input
+            type="text"
+            id="lead-city"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="es. Milano, Roma, Napoli..."
             className="w-full"
           />
         </div>

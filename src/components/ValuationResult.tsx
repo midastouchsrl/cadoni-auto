@@ -22,6 +22,7 @@ import {
   getEstimateTimeMs,
 } from '@/lib/analytics';
 import ShareModal from './ShareModal';
+import LeadForm from './LeadForm';
 
 interface Props {
   result: ValuationResult;
@@ -495,7 +496,16 @@ export default function ValuationResultDisplay({ result, input }: Props) {
       </div>
 
       {/* ============================================
-          BLOCCO 7 — CTA FINALI
+          BLOCCO 7 — LEAD FORM (RICHIESTA CONTATTO)
+          ============================================ */}
+      <LeadForm
+        confidence={result.confidence}
+        dealerGap={centralValue - professionalChannel}
+        cached={result.cached}
+      />
+
+      {/* ============================================
+          BLOCCO 8 — CTA FINALI
           ============================================ */}
       <div className="space-y-3 opacity-0 animate-fade-in-up animate-delay-400">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

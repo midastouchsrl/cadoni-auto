@@ -26,6 +26,7 @@ interface LeadRequest {
   name: string;
   email: string;
   phone: string;
+  city?: string;
   message?: string;
   estimate_id: string;
   anon_id: string;
@@ -61,6 +62,7 @@ async function sendEmailNotification(lead: {
   name: string;
   email: string;
   phone: string;
+  city?: string;
   message?: string;
   estimate_id: string;
   car_info?: LeadRequest['car_info'];
@@ -116,6 +118,12 @@ async function sendEmailNotification(lead: {
         <span class="label">Telefono</span>
         <span class="value"><a href="tel:${lead.phone}">${lead.phone}</a></span>
       </div>
+      ${lead.city ? `
+      <div class="field">
+        <span class="label">Città</span>
+        <span class="value">${lead.city}</span>
+      </div>
+      ` : ''}
       <div class="field">
         <span class="label">Veicolo valutato</span>
         <span class="value">${carInfo}</span>
@@ -147,6 +155,7 @@ Nuova richiesta di contatto VibeCar
 Nome: ${lead.name}
 Email: ${lead.email}
 Telefono: ${lead.phone}
+${lead.city ? `Città: ${lead.city}` : ''}
 Veicolo: ${carInfo}
 ${lead.message ? `Messaggio: ${lead.message}` : ''}
 ID Stima: ${lead.estimate_id}
@@ -233,6 +242,7 @@ export async function POST(request: NextRequest) {
     const sanitizedName = sanitize(body.name);
     const sanitizedEmail = body.email.toLowerCase().trim();
     const sanitizedPhone = body.phone.replace(/[\s\-\.]/g, '');
+    const sanitizedCity = body.city ? sanitize(body.city) : null;
     const sanitizedMessage = body.message ? sanitize(body.message) : null;
 
     await sql`
@@ -242,6 +252,7 @@ export async function POST(request: NextRequest) {
         name,
         email,
         phone,
+        city,
         message,
         consent_given,
         consent_text,
@@ -254,6 +265,7 @@ export async function POST(request: NextRequest) {
         ${sanitizedName},
         ${sanitizedEmail},
         ${sanitizedPhone},
+        ${sanitizedCity},
         ${sanitizedMessage},
         ${body.consent_given},
         ${CONSENT_TEXT},
@@ -270,6 +282,7 @@ export async function POST(request: NextRequest) {
       name: sanitizedName,
       email: sanitizedEmail,
       phone: sanitizedPhone,
+      city: sanitizedCity || undefined,
       message: sanitizedMessage || undefined,
       estimate_id: body.estimate_id,
       car_info: body.car_info,

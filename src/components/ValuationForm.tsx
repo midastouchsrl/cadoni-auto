@@ -13,8 +13,15 @@ import {
   GEARBOX_TYPES,
   CONDITION_TYPES,
   POWER_RANGES,
+  ITALIAN_REGIONS,
 } from '@/lib/config';
-import { trackStartEstimate, startEstimateTiming, trackEstimateFailed } from '@/lib/analytics';
+import {
+  trackStartEstimate,
+  startEstimateTiming,
+  trackEstimateFailed,
+  getEstimateContext,
+  getAnonId,
+} from '@/lib/analytics';
 import SearchableSelect, { toSelectOptions } from './SearchableSelect';
 
 // Convert power ranges to select options format
@@ -30,6 +37,9 @@ const YEAR_OPTIONS = YEARS_LIST.map((y) => ({ value: String(y), label: String(y)
 // Convert fuel and gearbox to consistent format
 const FUEL_OPTIONS = FUEL_TYPES.map((f) => ({ value: f.value, label: f.label }));
 const GEARBOX_OPTIONS = GEARBOX_TYPES.map((g) => ({ value: g.value, label: g.label }));
+
+// Convert regions to select options format
+const REGION_OPTIONS = ITALIAN_REGIONS.map((r) => ({ value: r.value, label: r.label }));
 
 interface Model {
   id: number;
@@ -50,6 +60,7 @@ export default function ValuationForm() {
   const [gearbox, setGearbox] = useState<string | ''>('');
   const [condition, setCondition] = useState('normale');
   const [powerRange, setPowerRange] = useState<string>('');
+  const [region, setRegion] = useState<string>('');
 
   // Models state
   const [models, setModels] = useState<Model[]>([]);
@@ -180,6 +191,10 @@ export default function ValuationForm() {
     trackStartEstimate(estimateProps);
     startEstimateTiming();
 
+    // Get tracking context
+    const estimateContext = getEstimateContext();
+    const anonId = getAnonId();
+
     try {
       const response = await fetch('/api/valuate', {
         method: 'POST',
@@ -194,7 +209,13 @@ export default function ValuationForm() {
           fuel,
           gearbox,
           condition,
-          powerRange: powerRange || undefined, // Solo se selezionato
+          powerRange: powerRange || undefined,
+          region: region || undefined,
+          // Tracking fields for persistence
+          estimate_id: estimateContext?.estimate_id,
+          anon_id: anonId,
+          origin_ref: estimateContext?.origin_ref,
+          origin_sid: estimateContext?.origin_sid,
         }),
       });
 
@@ -222,6 +243,7 @@ export default function ValuationForm() {
           gearbox,
           condition,
           powerRange: powerRange || undefined,
+          region: region || undefined,
         })
       );
       router.push('/risultato');
@@ -331,19 +353,35 @@ export default function ValuationForm() {
         </div>
       </div>
 
-      {/* Power Range */}
-      <div className="space-y-2">
-        <label htmlFor="power">
-          Potenza (CV)
-          <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
-        </label>
-        <SearchableSelect
-          id="power"
-          options={POWER_OPTIONS}
-          value={powerRange}
-          onChange={setPowerRange}
-          placeholder="Non so / Qualsiasi"
-        />
+      {/* Power Range and Region */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+        <div className="space-y-2">
+          <label htmlFor="power">
+            Potenza (CV)
+            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
+          </label>
+          <SearchableSelect
+            id="power"
+            options={POWER_OPTIONS}
+            value={powerRange}
+            onChange={setPowerRange}
+            placeholder="Non so / Qualsiasi"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="region">
+            Regione
+            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
+          </label>
+          <SearchableSelect
+            id="region"
+            options={REGION_OPTIONS}
+            value={region}
+            onChange={setRegion}
+            placeholder="Seleziona regione..."
+          />
+        </div>
       </div>
 
       {/* Condition */}
