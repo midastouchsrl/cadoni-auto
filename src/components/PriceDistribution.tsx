@@ -36,11 +36,11 @@ export default function PriceDistribution({ min_clean, max_clean, p25, p50, p75 
 
       {/* Distribution bar */}
       <div className="relative">
-        {/* Main track */}
-        <div className="h-3 bg-[var(--obsidian-700)] rounded-full overflow-hidden">
+        {/* Main track with better contrast */}
+        <div className="h-4 bg-slate-200 dark:bg-slate-900 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-inner">
           {/* Highlighted range */}
           <div
-            className="absolute h-3 bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-500 rounded-full"
+            className="absolute h-4 bg-gradient-to-r from-blue-500 via-emerald-500 to-amber-500 rounded-full shadow-md"
             style={{
               left: `${p25Pos}%`,
               width: `${p75Pos - p25Pos}%`,
@@ -49,15 +49,15 @@ export default function PriceDistribution({ min_clean, max_clean, p25, p50, p75 
         </div>
 
         {/* Markers */}
-        <div className="relative h-8 mt-1">
+        <div className="relative h-8 mt-2">
           {/* Min marker */}
           <div
             className="absolute flex flex-col items-center"
             style={{ left: `${p25Pos}%`, transform: 'translateX(-50%)' }}
           >
-            <div className="w-0.5 h-3 bg-blue-400" />
+            <div className="w-0.5 h-4 bg-blue-500 shadow-sm" />
             <div className="mt-1 text-center">
-              <span className="text-[10px] text-blue-400 font-medium block">Min</span>
+              <span className="text-[10px] text-blue-500 font-semibold block">Min</span>
             </div>
           </div>
 
@@ -66,9 +66,9 @@ export default function PriceDistribution({ min_clean, max_clean, p25, p50, p75 
             className="absolute flex flex-col items-center z-10"
             style={{ left: `${p50Pos}%`, transform: 'translateX(-50%)' }}
           >
-            <div className="w-1 h-4 bg-emerald-400 rounded-sm" />
+            <div className="w-1.5 h-5 bg-emerald-500 rounded-sm shadow-md" />
             <div className="mt-0.5 text-center">
-              <span className="text-[10px] text-emerald-400 font-bold block">Probabile</span>
+              <span className="text-[10px] text-emerald-500 font-bold block">Probabile</span>
             </div>
           </div>
 
@@ -77,9 +77,9 @@ export default function PriceDistribution({ min_clean, max_clean, p25, p50, p75 
             className="absolute flex flex-col items-center"
             style={{ left: `${p75Pos}%`, transform: 'translateX(-50%)' }}
           >
-            <div className="w-0.5 h-3 bg-amber-400" />
+            <div className="w-0.5 h-4 bg-amber-500 shadow-sm" />
             <div className="mt-1 text-center">
-              <span className="text-[10px] text-amber-400 font-medium block">Max</span>
+              <span className="text-[10px] text-amber-500 font-semibold block">Max</span>
             </div>
           </div>
         </div>
