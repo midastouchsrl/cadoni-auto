@@ -200,34 +200,115 @@ export default function ValuationResultDisplay({ result, input }: Props) {
       </div>
 
       {/* ============================================
-          BLOCCO 1 — VALORE DI MERCATO (FOCUS ASSOLUTO)
+          BLOCCO 1 — HERO PRICE CARD (BRANDING FORTE)
           ============================================ */}
-      <div className="glass-card p-6 md:p-8 opacity-0 animate-fade-in-up animate-delay-100">
-        <h3 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide mb-6 text-center">
-          Valore di mercato
-        </h3>
+      <div className="relative opacity-0 animate-fade-in-up animate-delay-100">
+        {/* Glow effect background */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-green-500/30 to-emerald-500/20 rounded-[24px] blur-xl opacity-75" />
 
-        {/* Central value - protagonist */}
-        <div className="text-center mb-6">
-          <div className="text-5xl md:text-6xl font-bold text-[var(--text-primary)]">
-            {formatPrice(centralValue)}
-          </div>
-          <p className="text-sm text-[var(--text-secondary)] mt-3 max-w-md mx-auto">
-            Prezzo che meglio rappresenta il mercato per veicoli simili al tuo, oggi.
-          </p>
-        </div>
+        {/* Main card */}
+        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-emerald-950 via-[#0a1f1a] to-[#0f172a] border border-emerald-500/20">
+          {/* Animated gradient border glow */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent animate-[shimmer_3s_infinite]" style={{ backgroundSize: '200% 100%' }} />
 
-        {/* Range - context only */}
-        <div className="mt-6 pt-6 border-t border-[var(--obsidian-600)]">
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-sm text-[var(--text-muted)]">Intervallo più probabile:</span>
-            <span className="text-lg font-semibold text-[var(--text-primary)]">
-              {formatPrice(rangeMin)} – {formatPrice(rangeMax)}
-            </span>
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+
+          {/* Content */}
+          <div className="relative p-6 md:p-8">
+            {/* Header with brand badge */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                </svg>
+                <span className="text-sm font-semibold text-emerald-300 tracking-wide">VALUTAZIONE VIBECAR</span>
+              </div>
+            </div>
+
+            {/* Central value - HERO */}
+            <div className="text-center mb-8">
+              <div className="relative inline-block">
+                {/* Price glow */}
+                <div className="absolute inset-0 text-6xl md:text-7xl font-bold text-emerald-400 blur-2xl opacity-50">
+                  {formatPrice(centralValue)}
+                </div>
+                {/* Main price */}
+                <div className="relative text-6xl md:text-7xl font-bold text-white drop-shadow-[0_0_30px_rgba(52,211,153,0.4)]">
+                  {formatPrice(centralValue)}
+                </div>
+              </div>
+              <p className="text-base text-emerald-200/70 mt-4 max-w-sm mx-auto">
+                Valore di mercato stimato
+              </p>
+            </div>
+
+            {/* Range bar visual */}
+            <div className="relative mb-6">
+              <div className="h-3 rounded-full bg-emerald-950 border border-emerald-800/50 overflow-hidden">
+                {/* Gradient fill */}
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-600/50 via-emerald-400 to-emerald-600/50 rounded-full relative"
+                  style={{
+                    marginLeft: `${Math.max(0, rangeMinPos - 5)}%`,
+                    width: `${Math.min(100, rangeMaxPos - rangeMinPos + 10)}%`,
+                  }}
+                >
+                  {/* Central marker */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-emerald-400"
+                    style={{
+                      left: `${((centralPos - rangeMinPos + 5) / (rangeMaxPos - rangeMinPos + 10)) * 100}%`,
+                      transform: 'translateX(-50%) translateY(-50%)'
+                    }}
+                  />
+                </div>
+              </div>
+              {/* Range labels */}
+              <div className="flex justify-between mt-3">
+                <div className="text-left">
+                  <div className="text-lg font-semibold text-emerald-300">{formatPrice(rangeMin)}</div>
+                  <div className="text-xs text-emerald-500/70">Min. probabile</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-semibold text-emerald-300">{formatPrice(rangeMax)}</div>
+                  <div className="text-xs text-emerald-500/70">Max. probabile</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Confidence badge */}
+            <div className="flex justify-center">
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${
+                result.confidence === 'alta'
+                  ? 'bg-emerald-500/20 border border-emerald-500/40'
+                  : result.confidence === 'media'
+                  ? 'bg-amber-500/20 border border-amber-500/40'
+                  : 'bg-blue-500/20 border border-blue-500/40'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  result.confidence === 'alta'
+                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                    : result.confidence === 'media'
+                    ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]'
+                    : 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  result.confidence === 'alta'
+                    ? 'text-emerald-300'
+                    : result.confidence === 'media'
+                    ? 'text-amber-300'
+                    : 'text-blue-300'
+                }`}>
+                  {precisionLabel}
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-[var(--text-muted)] text-center mt-2">
-            È la fascia in cui il mercato tende a posizionarsi.
-          </p>
+
+          {/* Bottom decorative elements */}
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl" />
         </div>
       </div>
 
