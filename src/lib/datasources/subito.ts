@@ -4,18 +4,20 @@
  *
  * IMPORTANTE: Questo adapter richiede Playwright (browser headless)
  * e deve essere usato SOLO in contesti background/worker, MAI in API routes
+ *
+ * Usa stealth mode per evitare detection anti-bot
  */
 
 import { CarListing, CarValuationInput, FuelType, GearboxType } from '../types';
 import { valuationCache, generateCacheKey } from '../cache';
 import { DataSourceAdapter, SearchParams } from './types';
 
-// Pool di User-Agent realistici per evitare detection
+// Pool di User-Agent realistici (Chrome 120+ su diversi OS)
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 ];
 
@@ -72,6 +74,14 @@ function getRandomUserAgent(): string {
 }
 
 /**
+ * Delay random per comportamento umano
+ */
+function randomDelay(min: number, max: number): Promise<void> {
+  const delay = min + Math.random() * (max - min);
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
+/**
  * Costruisce URL ricerca Subito.it
  */
 function buildSearchUrl(
@@ -95,7 +105,7 @@ function buildSearchUrl(
   queryParams.set('kms', String(params.kmMin)); // km start
   queryParams.set('kme', String(params.kmMax)); // km end
 
-  // Ordinamento per rilevanza
+  // Ordinamento per data
   queryParams.set('order', 'datedesc');
 
   return `${baseUrl}?${queryParams.toString()}`;
@@ -103,18 +113,18 @@ function buildSearchUrl(
 
 /**
  * Parsing listing da HTML Subito.it
- * Subito usa struttura JSON-LD embedded nella pagina
+ * Estrae dati dagli elementi della lista risultati
  */
 function parseListingsFromHtml(html: string): CarListing[] {
   const listings: CarListing[] = [];
   const seenIds = new Set<string>();
 
   try {
-    // Cerca JSON-LD con dati annunci
-    const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g);
+    // Metodo 1: Cerca JSON-LD con dati annunci
+    const jsonLdMatches = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g);
 
-    if (jsonLdMatch) {
-      for (const match of jsonLdMatch) {
+    if (jsonLdMatches) {
+      for (const match of jsonLdMatches) {
         try {
           const jsonContent = match.replace(/<script type="application\/ld\+json">/, '').replace(/<\/script>/, '');
           const data = JSON.parse(jsonContent);
@@ -155,38 +165,56 @@ function parseListingsFromHtml(html: string): CarListing[] {
       }
     }
 
-    // Fallback: parsing DOM (più fragile ma backup)
+    // Metodo 2: Pattern regex per estrarre prezzi da struttura HTML nota
     if (listings.length === 0) {
-      // Pattern per estrarre prezzi da data attributes o classi note
-      const pricePattern = /data-price="(\d+)"/g;
-      const titlePattern = /data-item-id="([^"]+)"/g;
-
+      // Pattern per item cards di Subito.it
+      // Cerca prezzi nel formato €X.XXX o X.XXX €
+      const pricePattern = /€\s*([\d.]+)|(\d{1,3}(?:\.\d{3})*)\s*€/g;
       let priceMatch;
       const prices: number[] = [];
-      while ((priceMatch = pricePattern.exec(html)) !== null) {
-        prices.push(parseInt(priceMatch[1], 10));
-      }
 
-      // Se troviamo prezzi, crea listing base
-      for (const price of prices) {
+      while ((priceMatch = pricePattern.exec(html)) !== null) {
+        const priceStr = (priceMatch[1] || priceMatch[2]).replace(/\./g, '');
+        const price = parseInt(priceStr, 10);
         if (price >= 500 && price <= 500000) {
-          const id = `subito-fallback-${price}-${Math.random().toString(36).slice(2, 6)}`;
-          if (!seenIds.has(id)) {
-            seenIds.add(id);
-            listings.push({
-              guid: id,
-              price,
-              mileage: 0,
-              firstRegistration: '',
-              fuelType: '',
-              sellerType: 'p',
-              source: 'subito',
-              year: 0,
-              km: 0,
-            });
-          }
+          prices.push(price);
         }
       }
+
+      // Rimuovi duplicati e crea listing
+      const uniquePrices = [...new Set(prices)];
+      console.log(`[Subito] Trovati ${uniquePrices.length} prezzi unici via regex`);
+
+      for (const price of uniquePrices.slice(0, 50)) { // Max 50 per evitare falsi positivi
+        const id = `subito-fallback-${price}-${Math.random().toString(36).slice(2, 8)}`;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          listings.push({
+            guid: id,
+            price,
+            mileage: 0,
+            firstRegistration: '',
+            fuelType: '',
+            sellerType: 'p',
+            source: 'subito',
+            year: 0,
+            km: 0,
+          });
+        }
+      }
+    }
+
+    // Metodo 3: Cerca data-urn (ID annuncio Subito)
+    if (listings.length === 0) {
+      const urnPattern = /data-urn="urn:ad:(\d+)"/g;
+      let urnMatch;
+      const urns: string[] = [];
+
+      while ((urnMatch = urnPattern.exec(html)) !== null) {
+        urns.push(urnMatch[1]);
+      }
+
+      console.log(`[Subito] Trovati ${urns.length} annunci via data-urn`);
     }
   } catch (error) {
     console.error('[Subito] Errore parsing:', error);
@@ -196,7 +224,7 @@ function parseListingsFromHtml(html: string): CarListing[] {
 }
 
 /**
- * Subito.it Adapter
+ * Subito.it Adapter con Stealth Mode
  * Richiede Playwright per rendering JavaScript
  */
 export class SubitoAdapter implements DataSourceAdapter {
@@ -204,41 +232,54 @@ export class SubitoAdapter implements DataSourceAdapter {
   priority = 2; // Secondario
   requiresBrowser = true; // Richiede Playwright
 
-  private playwright: typeof import('playwright') | null = null;
+  private playwrightExtra: typeof import('playwright-extra') | null = null;
+  private stealthPlugin: ReturnType<typeof import('puppeteer-extra-plugin-stealth')> | null = null;
   private browser: import('playwright').Browser | null = null;
 
   /**
-   * Inizializza Playwright (lazy loading)
+   * Inizializza Playwright (standard, stealth via settings)
    */
   private async initPlaywright(): Promise<void> {
-    if (this.playwright) return;
+    if (this.playwrightExtra) return;
 
     try {
-      // Dynamic import per evitare errori in contesti browser
-      this.playwright = await import('playwright');
+      // Usa playwright standard con impostazioni stealth manuali
+      const playwright = await import('playwright');
+      this.playwrightExtra = { chromium: playwright.chromium } as typeof import('playwright-extra');
       console.log('[Subito] Playwright caricato');
     } catch (error) {
-      console.error('[Subito] Errore caricamento Playwright:', error);
-      throw new Error('Playwright non disponibile');
+      console.error('[Subito] Errore caricamento playwright:', error);
+      throw error;
     }
   }
 
   /**
-   * Ottieni browser (riusa se possibile)
+   * Ottieni browser con stealth settings
    */
   private async getBrowser(): Promise<import('playwright').Browser> {
     await this.initPlaywright();
 
     if (!this.browser || !this.browser.isConnected()) {
-      console.log('[Subito] Avvio browser headless...');
-      this.browser = await this.playwright!.chromium.launch({
+      console.log('[Subito] Avvio browser stealth...');
+
+      // Args per massimizzare stealth
+      const stealthArgs = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        // Stealth args
+        '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--disable-site-isolation-trials',
+      ];
+
+      this.browser = await this.playwrightExtra!.chromium.launch({
         headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ],
+        args: stealthArgs,
       });
     }
 
@@ -279,7 +320,7 @@ export class SubitoAdapter implements DataSourceAdapter {
       return JSON.parse(cached) as CarListing[];
     }
 
-    console.log('[Subito] Avvio scraping con Playwright...');
+    console.log('[Subito] Avvio scraping stealth...');
 
     let context: import('playwright').BrowserContext | null = null;
     let page: import('playwright').Page | null = null;
@@ -288,47 +329,140 @@ export class SubitoAdapter implements DataSourceAdapter {
       const browser = await this.getBrowser();
       const userAgent = getRandomUserAgent();
 
+      // Context con settings realistici
       context = await browser.newContext({
         userAgent,
         viewport: { width: 1920, height: 1080 },
         locale: 'it-IT',
+        timezoneId: 'Europe/Rome',
+        // Headers extra per sembrare un browser reale
+        extraHTTPHeaders: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'max-age=0',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+        },
       });
 
       page = await context.newPage();
 
-      // Blocca risorse non necessarie per velocizzare
-      await page.route('**/*.{png,jpg,jpeg,gif,webp,svg,ico}', route => route.abort());
-      await page.route('**/*google*', route => route.abort());
+      // Override navigator.webdriver
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => undefined,
+        });
+        // Override permissions
+        const originalQuery = window.navigator.permissions.query;
+        // @ts-ignore
+        window.navigator.permissions.query = (parameters: { name: string }) =>
+          parameters.name === 'notifications'
+            ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
+            : originalQuery(parameters);
+      });
+
+      // Blocca solo tracker, non risorse che potrebbero essere necessarie per il rendering
+      await page.route('**/*google-analytics*', route => route.abort());
+      await page.route('**/*googletagmanager*', route => route.abort());
       await page.route('**/*facebook*', route => route.abort());
-      await page.route('**/*analytics*', route => route.abort());
+      await page.route('**/*doubleclick*', route => route.abort());
 
-      const url = buildSearchUrl(input, params);
-      console.log('[Subito] Navigazione a:', url);
-
-      // Naviga con timeout esteso
-      await page.goto(url, {
+      // Visita homepage auto per sembrare navigazione naturale
+      console.log('[Subito] Visita homepage auto...');
+      await page.goto('https://www.subito.it/annunci-italia/vendita/auto/', {
         waitUntil: 'domcontentloaded',
         timeout: 30000,
       });
 
-      // Attendi un po' per rendering JavaScript
-      await page.waitForTimeout(2000 + Math.random() * 2000);
+      // Delay umano
+      await randomDelay(2000, 4000);
 
-      // Prova ad accettare cookie se presente
+      // Accetta cookies se presente
       try {
-        const cookieButton = page.locator('button:has-text("Accetta"), button:has-text("Accetto")');
-        if (await cookieButton.isVisible({ timeout: 2000 })) {
+        const cookieButton = page.locator('button:has-text("Accetta"), button:has-text("Accetto"), #didomi-notice-agree-button, [data-testid="accept-button"]');
+        if (await cookieButton.isVisible({ timeout: 3000 })) {
           await cookieButton.click();
-          await page.waitForTimeout(500);
+          console.log('[Subito] Cookie accettato');
+          await randomDelay(1000, 2000);
         }
       } catch {
-        // Cookie banner non presente o già accettato
+        // Cookie banner non presente
       }
+
+      // Check per Access Denied sulla homepage
+      let pageTitle = await page.title();
+      if (pageTitle.includes('Access Denied') || pageTitle.includes('Blocked')) {
+        console.error('[Subito] Homepage bloccata da anti-bot');
+        return [];
+      }
+
+      console.log('[Subito] Homepage caricata, titolo:', pageTitle);
+
+      // Ora usa la barra di ricerca invece di URL diretta
+      console.log('[Subito] Ricerca:', `${input.brand} ${input.model}`);
+
+      // Trova input ricerca e inserisci query
+      const searchInput = page.locator('input[type="search"], input[placeholder*="Cerca"], input[name="q"]').first();
+      if (await searchInput.isVisible({ timeout: 5000 })) {
+        await searchInput.click();
+        await randomDelay(300, 600);
+        await searchInput.fill(`${input.brand} ${input.model}`);
+        await randomDelay(500, 1000);
+        await page.keyboard.press('Enter');
+        console.log('[Subito] Ricerca inviata');
+      } else {
+        // Fallback: naviga con URL ma da pagina già visitata
+        console.log('[Subito] Input ricerca non trovato, uso URL');
+        const url = buildSearchUrl(input, params);
+        await page.goto(url, {
+          waitUntil: 'domcontentloaded',
+          timeout: 30000,
+        });
+      }
+
+      // Attendi caricamento risultati
+      await randomDelay(3000, 5000);
+
+      // Delay per rendering JavaScript
+      await randomDelay(2000, 4000);
+
+      // Scroll per simulare comportamento umano e caricare lazy content
+      await page.evaluate(() => {
+        window.scrollTo({ top: 500, behavior: 'smooth' });
+      });
+      await randomDelay(1000, 2000);
+
+      await page.evaluate(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      await randomDelay(500, 1000);
+
+      // Check per Access Denied
+      pageTitle = await page.title();
+      if (pageTitle.includes('Access Denied') || pageTitle.includes('Blocked')) {
+        console.error('[Subito] Ricerca bloccata da anti-bot');
+        return [];
+      }
+
+      console.log('[Subito] Pagina risultati, titolo:', pageTitle);
 
       // Ottieni HTML renderizzato
       const html = await page.content();
-      const listings = parseListingsFromHtml(html);
 
+      // Debug: salva HTML per analisi
+      if (html.includes('Access Denied')) {
+        console.error('[Subito] Pagina contiene Access Denied');
+        return [];
+      }
+
+      const listings = parseListingsFromHtml(html);
       console.log(`[Subito] Trovati ${listings.length} annunci`);
 
       // Salva in cache

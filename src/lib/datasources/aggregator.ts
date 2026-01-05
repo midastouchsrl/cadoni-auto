@@ -172,25 +172,55 @@ export async function aggregateListings(
     };
   }
 
-  // STEP 3: Pochi risultati - accoda per background (NON blocca)
-  console.log(`[Aggregator] Solo ${primaryResults.length} risultati, accodo richieste secondarie...`);
+  // STEP 3: Pochi risultati - fetch sincrono da fonti secondarie
+  console.log(`[Aggregator] Solo ${primaryResults.length} risultati, attivo fonti secondarie...`);
 
   // Trova fonti secondarie (priority > 1, che richiedono browser)
   const secondaryAdapters = getAdaptersByPriority().filter(a =>
     a.priority > 1 && a.requiresBrowser
   );
 
-  for (const adapter of secondaryAdapters) {
-    // Accoda per elaborazione background
-    queueRequest(input, params, adapter.name);
-    sources[adapter.name] = 0; // Sarà aggiornato dal background worker
+  // Registra Subito se non già fatto
+  if (secondaryAdapters.length === 0) {
+    await registerSubitoAdapter();
+    const updatedAdapters = getAdaptersByPriority().filter(a =>
+      a.priority > 1 && a.requiresBrowser
+    );
+    secondaryAdapters.push(...updatedAdapters);
   }
 
-  // Ritorna subito con risultati primari (non blocca l'utente)
+  let allListings = [...primaryResults];
+
+  for (const adapter of secondaryAdapters) {
+    // Check rate limit
+    if (!checkRateLimit(adapter.name, config)) {
+      console.log(`[Aggregator] Rate limit attivo per ${adapter.name}, skip`);
+      sources[adapter.name] = 0;
+      continue;
+    }
+
+    try {
+      console.log(`[Aggregator] Fetch sincrono da ${adapter.name}...`);
+      updateRateLimit(adapter.name);
+
+      const listings = await adapter.fetchListings(input, params);
+      sources[adapter.name] = listings.length;
+      allListings.push(...listings);
+
+      console.log(`[Aggregator] ${adapter.name}: ${listings.length} risultati`);
+    } catch (error) {
+      console.error(`[Aggregator] Errore ${adapter.name}:`, error);
+      sources[adapter.name] = 0;
+    }
+  }
+
+  // Deduplicazione cross-source
+  const deduplicated = deduplicateCrossSource(allListings);
+
   return {
-    listings: primaryResults,
+    listings: deduplicated,
     sources,
-    enriched: false, // Sarà true quando background completa
+    enriched: secondaryAdapters.length > 0 && allListings.length > primaryResults.length,
     fetchTimeMs: Date.now() - startTime,
   };
 }
