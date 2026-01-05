@@ -540,15 +540,6 @@ export default function ValuationResultDisplay({ result, input }: Props) {
         </p>
       </div>
 
-      {/* ============================================
-          DISCLAIMER
-          ============================================ */}
-      <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700/50 opacity-0 animate-fade-in-up animate-delay-450">
-        <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed text-center">
-          Valutazione indicativa basata su dati di mercato pubblicamente disponibili. Non costituisce offerta di acquisto.
-        </p>
-      </div>
-
       {/* Share Modal */}
       <ShareModal
         isOpen={showShareModal}
