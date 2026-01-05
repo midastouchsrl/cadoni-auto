@@ -14,10 +14,10 @@ export default function Home() {
       <div className="gradient-orb gradient-orb-teal-muted w-[400px] h-[400px] top-[60%] -left-[100px] fixed" />
 
       {/* Hero Section */}
-      <section className="relative pt-8 pb-12 md:pt-16 md:pb-20">
+      <section className="relative pt-8 pb-16 md:pt-16 md:pb-28">
         <div className="max-w-5xl mx-auto px-6">
           {/* Header with Logo and Theme Toggle */}
-          <div className="flex items-center justify-between mb-16 md:mb-24 opacity-0 animate-fade-in-up">
+          <div className="flex items-center justify-between mb-12 md:mb-20 opacity-0 animate-fade-in-up">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -36,14 +36,14 @@ export default function Home() {
           </div>
 
           {/* Headline */}
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 opacity-0 animate-fade-in-up animate-delay-100">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-[1.1] opacity-0 animate-fade-in-up animate-delay-100">
               Quanto vale{' '}
               <span className="text-gradient-brand">davvero</span>{' '}
               la tua auto?
             </h1>
 
-            <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-4 opacity-0 animate-fade-in-up animate-delay-200">
+            <p className="text-xl md:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-6 opacity-0 animate-fade-in-up animate-delay-200">
               Stima basata su veicoli simili al tuo, con un intervallo di prezzo chiaro.
             </p>
 
