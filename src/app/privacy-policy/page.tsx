@@ -43,12 +43,20 @@ export default function PrivacyPolicyPage() {
               1. Titolare del trattamento
             </h2>
             <p className="text-[var(--text-secondary)] leading-relaxed">
-              Il titolare del trattamento dei dati personali è <strong>VibeCar</strong>.
-              Per qualsiasi domanda relativa alla privacy, puoi contattarci all&apos;indirizzo:{' '}
-              <a href="mailto:privacy@vibecar.it" className="text-blue-400 hover:underline">
-                privacy@vibecar.it
-              </a>
+              Il titolare del trattamento dei dati personali è:
             </p>
+            <div className="p-4 rounded-lg bg-[var(--obsidian-700)] border border-[var(--obsidian-600)]">
+              <p className="text-[var(--text-primary)] font-medium">Midas Touch S.r.l.</p>
+              <p className="text-[var(--text-secondary)]">Via Arrigo Davila 61</p>
+              <p className="text-[var(--text-secondary)]">00179 Roma (RM)</p>
+              <p className="text-[var(--text-secondary)]">P.IVA: 17203491000</p>
+              <p className="text-[var(--text-secondary)] mt-2">
+                Email:{' '}
+                <a href="mailto:info@midastouch.it" className="text-blue-400 hover:underline">
+                  info@midastouch.it
+                </a>
+              </p>
+            </div>
           </section>
 
           {/* Dati raccolti */}
@@ -163,8 +171,8 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p className="text-[var(--text-secondary)] leading-relaxed">
               Per esercitare questi diritti, contattaci a:{' '}
-              <a href="mailto:privacy@vibecar.it" className="text-blue-400 hover:underline">
-                privacy@vibecar.it
+              <a href="mailto:info@midastouch.it" className="text-blue-400 hover:underline">
+                info@midastouch.it
               </a>
             </p>
           </section>
@@ -202,11 +210,14 @@ export default function PrivacyPolicyPage() {
               Per qualsiasi domanda sulla privacy o per esercitare i tuoi diritti:
             </p>
             <div className="p-4 rounded-lg bg-[var(--obsidian-700)] border border-[var(--obsidian-600)]">
-              <p className="text-[var(--text-primary)] font-medium">VibeCar</p>
-              <p className="text-[var(--text-secondary)]">
+              <p className="text-[var(--text-primary)] font-medium">Midas Touch S.r.l.</p>
+              <p className="text-[var(--text-secondary)]">Via Arrigo Davila 61</p>
+              <p className="text-[var(--text-secondary)]">00179 Roma (RM)</p>
+              <p className="text-[var(--text-secondary)]">P.IVA: 17203491000</p>
+              <p className="text-[var(--text-secondary)] mt-2">
                 Email:{' '}
-                <a href="mailto:privacy@vibecar.it" className="text-blue-400 hover:underline">
-                  privacy@vibecar.it
+                <a href="mailto:info@midastouch.it" className="text-blue-400 hover:underline">
+                  info@midastouch.it
                 </a>
               </p>
             </div>
@@ -215,7 +226,7 @@ export default function PrivacyPolicyPage() {
 
         {/* Footer */}
         <footer className="mt-8 text-center text-sm text-[var(--text-muted)]">
-          <p>&copy; 2026 VibeCar. Tutti i diritti riservati.</p>
+          <p>&copy; 2026 VibeCar - Un progetto Midas Touch S.r.l.</p>
         </footer>
       </div>
     </main>

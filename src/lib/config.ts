@@ -93,9 +93,9 @@ export const GEARBOX_TYPES = [
 
 // Condizioni veicolo
 export const CONDITION_TYPES = [
-  { value: 'scarsa', label: 'Scarsa', description: 'Richiede interventi, usura evidente' },
-  { value: 'normale', label: 'Normale', description: 'Buone condizioni generali' },
-  { value: 'ottima', label: 'Ottima', description: 'Perfette condizioni, pari al nuovo' },
+  { value: 'scarsa', label: 'Scarsa', description: 'Usura evidente o interventi necessari' },
+  { value: 'normale', label: 'Normale', description: 'Buone condizioni per età e chilometraggio' },
+  { value: 'ottima', label: 'Ottima', description: 'Tenuta con cura, senza difetti rilevanti' },
 ] as const;
 
 // Cache settings

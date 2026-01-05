@@ -123,10 +123,6 @@ export default function RisultatoPage() {
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 md:py-12">
         <div className="opacity-0 animate-fade-in-up">
-          <h1 className="text-2xl md:text-3xl font-bold mb-8">
-            Risultato valutazione
-          </h1>
-
           <ValuationResultDisplay
             result={result}
             input={input as { brand: string; model: string; year: string; km: string; fuel: string; gearbox: string; condition: string }}
@@ -135,11 +131,53 @@ export default function RisultatoPage() {
       </div>
 
       {/* Footer */}
-      <footer className="relative py-6 border-t border-[var(--obsidian-700)] mt-auto">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-xs text-[var(--text-muted)]">
-            vibecar - Valutazione indicativa basata su dati pubblici di mercato
-          </p>
+      <footer className="relative py-8 border-t border-[var(--obsidian-700)] mt-auto">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            {/* Logo - left */}
+            <div className="flex flex-col items-center md:items-start gap-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/brand/logo regular light@600x.png"
+                alt="vibecar"
+                className="h-6 dark:block hidden"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/brand/logo regular@600x.png"
+                alt="vibecar"
+                className="h-6 dark:hidden block"
+              />
+              <span className="text-xs text-[var(--text-muted)]">&copy; 2026 VibeCar</span>
+            </div>
+
+            {/* Disclaimer - center */}
+            <div className="text-xs text-[var(--text-muted)] text-center">
+              <p>
+                Valutazione indicativa basata su dati di mercato pubblicamente disponibili.<br className="hidden sm:inline" />
+                Non costituisce offerta di acquisto.
+              </p>
+              <a
+                href="/privacy-policy"
+                className="inline-block mt-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors underline"
+              >
+                Privacy Policy
+              </a>
+            </div>
+
+            {/* Developer credits - right */}
+            <p className="text-xs text-[var(--text-muted)] tracking-[0.15em] uppercase text-center md:text-right">
+              Made with intention by{' '}
+              <a
+                href="https://www.midastouch.it"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#C9A962] hover:text-[#D4B978] transition-colors"
+              >
+                Midas Touch
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
     </main>

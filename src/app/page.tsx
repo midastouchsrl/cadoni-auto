@@ -23,13 +23,13 @@ export default function Home() {
               <img
                 src="/images/brand/logo regular light@600x.png"
                 alt="vibecar"
-                className="h-8 dark:block hidden"
+                className="h-10 dark:block hidden"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/brand/logo regular@600x.png"
                 alt="vibecar"
-                className="h-8 dark:hidden block"
+                className="h-10 dark:hidden block"
               />
             </div>
             <ThemeToggle />
@@ -38,30 +38,26 @@ export default function Home() {
           {/* Headline */}
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 opacity-0 animate-fade-in-up animate-delay-100">
-              Quanto vale{' '}
-              <span className="text-gradient-brand">davvero</span>
+              Il prezzo{' '}
+              <span className="text-gradient-brand">reale</span>{' '}
+              della tua auto.
               <br />
-              la tua auto?
+              <span className="text-[var(--text-secondary)] text-3xl md:text-5xl lg:text-6xl font-medium">Non quello che ti offrono.</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-xl mx-auto mb-4 opacity-0 animate-fade-in-up animate-delay-200">
-              Stima basata su annunci reali simili al tuo veicolo.
-              Range, mediana e affidabilità in pochi secondi.
+            <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-4 opacity-0 animate-fade-in-up animate-delay-200">
+              Analisi di mercato su veicoli simili al tuo, con un intervallo di prezzo chiaro e una precisione stimata.
             </p>
 
             {/* Trust indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--text-muted)] opacity-0 animate-fade-in-up animate-delay-300">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
-                <span>Nessuna registrazione</span>
+                <span>Aggiornato sul mercato attuale</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Aggiornato automaticamente</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#6366f1]" />
-                <span>100% gratuito</span>
+                <span>Nessuna registrazione</span>
               </div>
             </div>
           </div>
@@ -91,7 +87,7 @@ export default function Home() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold">Inserisci i dati</h2>
-                <p className="text-sm text-[var(--text-muted)]">Compila i campi per la valutazione</p>
+                <p className="text-sm text-[var(--text-muted)]">Compila i campi per ottenere una stima indicativa del valore del tuo veicolo.</p>
               </div>
             </div>
 
@@ -123,7 +119,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Istantaneo</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                Risultato in pochi secondi grazie all&apos;analisi automatica del mercato in tempo reale.
+                Il mercato attuale, in pochi secondi.
               </p>
             </div>
 
@@ -146,7 +142,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Affidabile</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                Basato su annunci reali con indicatore di affidabilit&agrave; per ogni valutazione.
+                Basato su veicoli realmente in vendita, con indicatori di precisione.
               </p>
             </div>
 
@@ -169,7 +165,7 @@ export default function Home() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Gratuito</h3>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                Nessuna registrazione, nessun costo nascosto. Valutazione completamente gratuita.
+                Nessuna registrazione, nessun costo.
               </p>
             </div>
           </div>
@@ -179,24 +175,50 @@ export default function Home() {
       {/* Footer */}
       <footer className="relative py-8 border-t border-[var(--obsidian-700)]">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+          {/* Main footer row - 3 columns on desktop */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            {/* Logo - left */}
+            <div className="flex flex-col items-center md:items-start gap-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/brand/logo regular light@600x.png"
                 alt="vibecar"
-                className="h-5 dark:block hidden"
+                className="h-6 dark:block hidden"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/brand/logo regular@600x.png"
                 alt="vibecar"
-                className="h-5 dark:hidden block"
+                className="h-6 dark:hidden block"
               />
+              <span className="text-xs text-[var(--text-muted)]">&copy; 2026 VibeCar</span>
             </div>
 
-            <p className="text-xs text-[var(--text-muted)] text-center md:text-right">
-              Valutazione indicativa basata su dati pubblici. Non costituisce offerta di acquisto.
+            {/* Disclaimer - center */}
+            <div className="text-xs text-[var(--text-muted)] text-center">
+              <p>
+                Valutazione indicativa basata su dati di mercato pubblicamente disponibili.<br className="hidden sm:inline" />
+                Non costituisce offerta di acquisto.
+              </p>
+              <a
+                href="/privacy-policy"
+                className="inline-block mt-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors underline"
+              >
+                Privacy Policy
+              </a>
+            </div>
+
+            {/* Developer credits - right */}
+            <p className="text-xs text-[var(--text-muted)] tracking-[0.15em] uppercase text-center md:text-right">
+              Made with intention by{' '}
+              <a
+                href="https://www.midastouch.it"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#C9A962] hover:text-[#D4B978] transition-colors"
+              >
+                Midas Touch
+              </a>
             </p>
           </div>
         </div>
