@@ -204,25 +204,25 @@ export default function ValuationResultDisplay({ result, input }: Props) {
           ============================================ */}
       <div className="relative opacity-0 animate-fade-in-up animate-delay-100">
         {/* Glow effect background */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-green-500/30 to-emerald-500/20 rounded-[24px] blur-xl opacity-75" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/25 via-cyan-500/35 to-teal-500/25 rounded-[24px] blur-xl opacity-75" />
 
         {/* Main card */}
-        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-emerald-950 via-[#0a1f1a] to-[#0f172a] border border-emerald-500/20">
+        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-teal-900/95 via-teal-800/90 to-cyan-900/85 border border-teal-400/30">
           {/* Animated gradient border glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent animate-[shimmer_3s_infinite]" style={{ backgroundSize: '200% 100%' }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-teal-400/15 to-transparent animate-[shimmer_3s_infinite]" style={{ backgroundSize: '200% 100%' }} />
 
           {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
 
           {/* Content */}
           <div className="relative p-6 md:p-8">
             {/* Header with brand badge */}
             <div className="flex items-center justify-center gap-2 mb-6">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-teal-400/15 border border-teal-400/40">
+                <svg className="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
                 </svg>
-                <span className="text-sm font-semibold text-emerald-300 tracking-wide">VALUTAZIONE VIBECAR</span>
+                <span className="text-sm font-semibold text-teal-200 tracking-wide">VALUTAZIONE VIBECAR</span>
               </div>
             </div>
 
@@ -230,25 +230,25 @@ export default function ValuationResultDisplay({ result, input }: Props) {
             <div className="text-center mb-8">
               <div className="relative inline-block">
                 {/* Price glow */}
-                <div className="absolute inset-0 text-6xl md:text-7xl font-bold text-emerald-400 blur-2xl opacity-50">
+                <div className="absolute inset-0 text-6xl md:text-7xl font-bold text-teal-300 blur-2xl opacity-50">
                   {formatPrice(centralValue)}
                 </div>
                 {/* Main price */}
-                <div className="relative text-6xl md:text-7xl font-bold text-white drop-shadow-[0_0_30px_rgba(52,211,153,0.4)]">
+                <div className="relative text-6xl md:text-7xl font-bold text-white drop-shadow-[0_0_30px_rgba(94,234,212,0.4)]">
                   {formatPrice(centralValue)}
                 </div>
               </div>
-              <p className="text-base text-emerald-200/70 mt-4 max-w-sm mx-auto">
+              <p className="text-base text-teal-100/70 mt-4 max-w-sm mx-auto">
                 Valore di mercato stimato
               </p>
             </div>
 
             {/* Range bar visual */}
             <div className="relative mb-6">
-              <div className="h-3 rounded-full bg-emerald-950 border border-emerald-800/50 overflow-hidden">
+              <div className="h-3 rounded-full bg-teal-950/50 border border-teal-700/50 overflow-hidden">
                 {/* Gradient fill */}
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-600/50 via-emerald-400 to-emerald-600/50 rounded-full relative"
+                  className="h-full bg-gradient-to-r from-teal-500/50 via-teal-300 to-teal-500/50 rounded-full relative"
                   style={{
                     marginLeft: `${Math.max(0, rangeMinPos - 5)}%`,
                     width: `${Math.min(100, rangeMaxPos - rangeMinPos + 10)}%`,
@@ -256,7 +256,7 @@ export default function ValuationResultDisplay({ result, input }: Props) {
                 >
                   {/* Central marker */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)] border-2 border-emerald-400"
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_rgba(94,234,212,0.8)] border-2 border-teal-300"
                     style={{
                       left: `${((centralPos - rangeMinPos + 5) / (rangeMaxPos - rangeMinPos + 10)) * 100}%`,
                       transform: 'translateX(-50%) translateY(-50%)'
@@ -267,48 +267,32 @@ export default function ValuationResultDisplay({ result, input }: Props) {
               {/* Range labels */}
               <div className="flex justify-between mt-3">
                 <div className="text-left">
-                  <div className="text-lg font-semibold text-emerald-300">{formatPrice(rangeMin)}</div>
-                  <div className="text-xs text-emerald-500/70">Min. probabile</div>
+                  <div className="text-lg font-semibold text-teal-200">{formatPrice(rangeMin)}</div>
+                  <div className="text-xs text-teal-400/70">Min. probabile</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-semibold text-emerald-300">{formatPrice(rangeMax)}</div>
-                  <div className="text-xs text-emerald-500/70">Max. probabile</div>
+                  <div className="text-lg font-semibold text-teal-200">{formatPrice(rangeMax)}</div>
+                  <div className="text-xs text-teal-400/70">Max. probabile</div>
                 </div>
               </div>
             </div>
 
-            {/* Confidence badge */}
+            {/* Data foundation badge - premium framing */}
             <div className="flex justify-center">
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${
-                result.confidence === 'alta'
-                  ? 'bg-emerald-500/20 border border-emerald-500/40'
-                  : result.confidence === 'media'
-                  ? 'bg-amber-500/20 border border-amber-500/40'
-                  : 'bg-blue-500/20 border border-blue-500/40'
-              }`}>
-                <span className={`w-2 h-2 rounded-full ${
-                  result.confidence === 'alta'
-                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                    : result.confidence === 'media'
-                    ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]'
-                    : 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]'
-                }`} />
-                <span className={`text-sm font-medium ${
-                  result.confidence === 'alta'
-                    ? 'text-emerald-300'
-                    : result.confidence === 'media'
-                    ? 'text-amber-300'
-                    : 'text-blue-300'
-                }`}>
-                  {precisionLabel}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                <svg className="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+                <span className="text-sm font-medium text-teal-100/90">
+                  Basato su {result.samples} annunci attivi
                 </span>
               </div>
             </div>
           </div>
 
           {/* Bottom decorative elements */}
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-400/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-cyan-400/10 rounded-full blur-2xl" />
         </div>
       </div>
 
@@ -366,14 +350,14 @@ export default function ValuationResultDisplay({ result, input }: Props) {
             {marketDepth.description}, con {priceDispersion.description.toLowerCase()}.
           </p>
 
-          {/* Precision badge */}
+          {/* Data quality indicator - factual framing */}
           <div className="flex items-center gap-3">
-            <span
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${precisionStyle.bg} ${precisionStyle.text} border ${precisionStyle.border}`}
-            >
-              <span className={`w-2 h-2 rounded-full ${precisionStyle.dot}`} />
-              {precisionLabel}
-            </span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-[var(--obsidian-700)] text-[var(--text-secondary)] border border-[var(--obsidian-600)]">
+              <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {result.samples >= 20 ? 'Campione rappresentativo' : result.samples >= 10 ? 'Dati sufficienti' : 'Mercato di nicchia'}
+            </div>
           </div>
         </div>
       </div>
@@ -470,6 +454,14 @@ export default function ValuationResultDisplay({ result, input }: Props) {
               <span className="text-xs font-medium text-blue-400">{formatPrice(professionalChannel)}</span>
             </div>
             <div className="h-3 bg-[var(--obsidian-700)] rounded-full relative overflow-hidden">
+              {/* Filled bar up to professional channel position */}
+              <div
+                className="absolute h-full bg-blue-500/30 rounded-full"
+                style={{
+                  left: '0%',
+                  width: `${professionalPos}%`,
+                }}
+              />
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-blue-400 rounded-full"
                 style={{ left: `${professionalPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
