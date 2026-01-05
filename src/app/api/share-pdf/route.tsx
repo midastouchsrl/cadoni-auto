@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
     year: 'numeric',
   });
 
-  // A4 ratio dimensions - high resolution for crisp output
-  const width = 1620;
-  const height = 2290;
+  // A4 ratio dimensions optimized for quality
+  const width = 1080;
+  const height = 1527;
 
   return new ImageResponse(
     (
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: 'white',
-          padding: '90px',
+          padding: '60px',
           fontFamily: 'system-ui, sans-serif',
         }}
       >
@@ -72,35 +72,35 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            marginBottom: '60px',
-            paddingBottom: '36px',
-            borderBottom: `3px solid ${BRAND_TEAL}`,
+            marginBottom: '40px',
+            paddingBottom: '24px',
+            borderBottom: `2px solid ${BRAND_TEAL}`,
           }}
         >
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${baseUrl}/images/brand/logo-dark.png`}
-              height="60"
+              height="40"
               alt="vibecar"
             />
           </div>
 
           {/* Badge & Date */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Verification Badge */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${baseUrl}/images/brand/badge-dark.png`}
-              width="72"
-              height="72"
+              width="48"
+              height="48"
               alt=""
             />
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <span style={{ color: '#6b7280', fontSize: '21px' }}>{today}</span>
+              <span style={{ color: '#6b7280', fontSize: '14px' }}>{today}</span>
               {estimateId && (
-                <span style={{ color: '#9ca3af', fontSize: '18px', fontFamily: 'monospace' }}>
+                <span style={{ color: '#9ca3af', fontSize: '12px', fontFamily: 'monospace' }}>
                   ID: {estimateId.slice(0, 8)}
                 </span>
               )}
@@ -109,14 +109,14 @@ export async function GET(request: NextRequest) {
         </div>
 
         {/* Vehicle info */}
-        <div style={{ marginBottom: '60px', display: 'flex', flexDirection: 'column' }}>
-          <span style={{ color: '#9ca3af', fontSize: '21px', textTransform: 'uppercase', letterSpacing: '3px' }}>
+        <div style={{ marginBottom: '40px', display: 'flex', flexDirection: 'column' }}>
+          <span style={{ color: '#9ca3af', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '2px' }}>
             Veicolo valutato
           </span>
-          <span style={{ color: '#111827', fontSize: '63px', fontWeight: 700, marginTop: '12px', marginBottom: '12px' }}>
+          <span style={{ color: '#111827', fontSize: '42px', fontWeight: 700, marginTop: '8px', marginBottom: '8px' }}>
             {brand} {model}
           </span>
-          <div style={{ display: 'flex', gap: '36px', color: '#6b7280', fontSize: '27px' }}>
+          <div style={{ display: 'flex', gap: '24px', color: '#6b7280', fontSize: '18px' }}>
             <span>Anno: {year}</span>
             <span>Chilometraggio: {formatKm(km)}</span>
             {fuel && <span>Alimentazione: {fuel}</span>}
@@ -128,27 +128,27 @@ export async function GET(request: NextRequest) {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            padding: '60px',
-            borderRadius: '30px',
+            padding: '40px',
+            borderRadius: '20px',
             background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)',
-            border: `3px solid ${BRAND_TEAL}`,
-            marginBottom: '48px',
+            border: `2px solid ${BRAND_TEAL}`,
+            marginBottom: '32px',
           }}
         >
-          <span style={{ color: BRAND_NAVY, fontSize: '24px', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '12px' }}>
+          <span style={{ color: BRAND_NAVY, fontSize: '16px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>
             Valore di mercato stimato
           </span>
-          <span style={{ color: '#0d9488', fontSize: '96px', fontWeight: 700, lineHeight: 1 }}>
+          <span style={{ color: '#0d9488', fontSize: '64px', fontWeight: 700, lineHeight: 1 }}>
             {formatPrice(p50)}
           </span>
-          <div style={{ display: 'flex', gap: '48px', marginTop: '36px' }}>
+          <div style={{ display: 'flex', gap: '32px', marginTop: '24px' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ color: '#6b7280', fontSize: '21px' }}>Prezzo minimo</span>
-              <span style={{ color: '#3b82f6', fontSize: '42px', fontWeight: 600 }}>{formatPrice(p25)}</span>
+              <span style={{ color: '#6b7280', fontSize: '14px' }}>Prezzo minimo</span>
+              <span style={{ color: '#3b82f6', fontSize: '28px', fontWeight: 600 }}>{formatPrice(p25)}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ color: '#6b7280', fontSize: '21px' }}>Prezzo massimo</span>
-              <span style={{ color: '#f59e0b', fontSize: '42px', fontWeight: 600 }}>{formatPrice(p75)}</span>
+              <span style={{ color: '#6b7280', fontSize: '14px' }}>Prezzo massimo</span>
+              <span style={{ color: '#f59e0b', fontSize: '28px', fontWeight: 600 }}>{formatPrice(p75)}</span>
             </div>
           </div>
         </div>
@@ -156,35 +156,35 @@ export async function GET(request: NextRequest) {
         {/* Explanation */}
         <div
           style={{
-            padding: '36px',
-            borderRadius: '24px',
+            padding: '24px',
+            borderRadius: '16px',
             background: '#f9fafb',
-            border: '2px solid #e5e7eb',
-            marginBottom: '60px',
+            border: '1px solid #e5e7eb',
+            marginBottom: '40px',
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          <span style={{ color: '#111827', fontSize: '24px', fontWeight: 600, marginBottom: '12px' }}>
+          <span style={{ color: '#111827', fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
             Come leggere questa valutazione
           </span>
-          <span style={{ color: '#6b7280', fontSize: '21px', lineHeight: 1.6 }}>
-            Il valore centrale rappresenta il prezzo di vendita più probabile per veicoli simili al tuo. L'intervallo minimo-massimo indica la fascia in cui la maggior parte dei veicoli viene venduta.
+          <span style={{ color: '#6b7280', fontSize: '14px', lineHeight: 1.6 }}>
+            Il valore centrale rappresenta il prezzo di vendita più probabile per veicoli simili al tuo. L&apos;intervallo minimo-massimo indica la fascia in cui la maggior parte dei veicoli viene venduta.
           </span>
         </div>
 
         {/* Footer */}
         <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ color: '#9ca3af', fontSize: '18px' }}>
+            <span style={{ color: '#9ca3af', fontSize: '12px' }}>
               Valutazione generata automaticamente
             </span>
-            <span style={{ color: '#9ca3af', fontSize: '18px' }}>
-              Non costituisce un'offerta di acquisto
+            <span style={{ color: '#9ca3af', fontSize: '12px' }}>
+              Non costituisce un&apos;offerta di acquisto
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: BRAND_TEAL, fontSize: '27px', fontWeight: 600 }}>vibecar.it</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: BRAND_TEAL, fontSize: '18px', fontWeight: 600 }}>vibecar.it</span>
           </div>
         </div>
       </div>

@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   const p50 = searchParams.get('p50') || '0';
   const p25 = searchParams.get('p25') || '0';
   const p75 = searchParams.get('p75') || '0';
+
   // Format price
   const formatPrice = (price: string) => {
     const num = parseInt(price, 10);
@@ -57,10 +58,10 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            top: '-300px',
-            right: '-300px',
-            width: '900px',
-            height: '900px',
+            top: '-200px',
+            right: '-200px',
+            width: '600px',
+            height: '600px',
             borderRadius: '50%',
             background: `radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, transparent 70%)`,
           }}
@@ -68,10 +69,10 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            bottom: '-150px',
-            left: '-150px',
-            width: '600px',
-            height: '600px',
+            bottom: '-100px',
+            left: '-100px',
+            width: '400px',
+            height: '400px',
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)',
           }}
@@ -81,16 +82,16 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            top: '90px',
-            right: '90px',
+            top: '60px',
+            right: '60px',
             display: 'flex',
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${baseUrl}/images/brand/badge-dark.png`}
-            width="120"
-            height="120"
+            width="80"
+            height="80"
             alt=""
           />
         </div>
@@ -100,36 +101,36 @@ export async function GET(request: NextRequest) {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            paddingTop: '120px',
-            paddingBottom: '60px',
+            paddingTop: '80px',
+            paddingBottom: '40px',
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${baseUrl}/images/brand/logo-light.png`}
-            height="84"
+            height="56"
             alt="vibecar"
           />
         </div>
 
         {/* Spacer */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 90px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 60px' }}>
           {/* Car info */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              marginBottom: '72px',
+              marginBottom: '48px',
             }}
           >
             <span
               style={{
                 color: '#9ca3af',
-                fontSize: '36px',
+                fontSize: '24px',
                 textTransform: 'uppercase',
-                letterSpacing: '6px',
-                marginBottom: '24px',
+                letterSpacing: '4px',
+                marginBottom: '16px',
               }}
             >
               Valutazione
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
             <span
               style={{
                 color: 'white',
-                fontSize: '84px',
+                fontSize: '56px',
                 fontWeight: 700,
                 textAlign: 'center',
                 lineHeight: 1.1,
@@ -149,17 +150,17 @@ export async function GET(request: NextRequest) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '24px',
-                marginTop: '30px',
+                gap: '16px',
+                marginTop: '20px',
               }}
             >
-              <span style={{ color: '#94a3b8', fontSize: '42px' }}>{year}</span>
-              <span style={{ color: '#475569', fontSize: '42px' }}>•</span>
-              <span style={{ color: '#94a3b8', fontSize: '42px' }}>{formatKm(km)}</span>
+              <span style={{ color: '#94a3b8', fontSize: '28px' }}>{year}</span>
+              <span style={{ color: '#475569', fontSize: '28px' }}>•</span>
+              <span style={{ color: '#94a3b8', fontSize: '28px' }}>{formatKm(km)}</span>
               {fuel && (
                 <>
-                  <span style={{ color: '#475569', fontSize: '42px' }}>•</span>
-                  <span style={{ color: '#94a3b8', fontSize: '42px', textTransform: 'capitalize' }}>{fuel}</span>
+                  <span style={{ color: '#475569', fontSize: '28px' }}>•</span>
+                  <span style={{ color: '#94a3b8', fontSize: '28px', textTransform: 'capitalize' }}>{fuel}</span>
                 </>
               )}
             </div>
@@ -171,20 +172,20 @@ export async function GET(request: NextRequest) {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              padding: '72px 120px',
-              borderRadius: '48px',
+              padding: '48px 80px',
+              borderRadius: '32px',
               background: `linear-gradient(135deg, ${BRAND_TEAL}, #14b8a6, #0d9488)`,
-              marginBottom: '60px',
-              boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.5)',
+              marginBottom: '40px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             }}
           >
             <span
               style={{
                 color: 'rgba(255,255,255,0.85)',
-                fontSize: '33px',
+                fontSize: '22px',
                 textTransform: 'uppercase',
-                letterSpacing: '5px',
-                marginBottom: '18px',
+                letterSpacing: '3px',
+                marginBottom: '12px',
               }}
             >
               Valore di mercato
@@ -192,7 +193,7 @@ export async function GET(request: NextRequest) {
             <span
               style={{
                 color: 'white',
-                fontSize: '120px',
+                fontSize: '80px',
                 fontWeight: 700,
                 lineHeight: 1,
               }}
@@ -205,17 +206,17 @@ export async function GET(request: NextRequest) {
           <div
             style={{
               display: 'flex',
-              gap: '72px',
-              marginBottom: '72px',
+              gap: '48px',
+              marginBottom: '48px',
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ color: '#94a3b8', fontSize: '30px', marginBottom: '6px' }}>Minimo</span>
-              <span style={{ color: '#60a5fa', fontSize: '54px', fontWeight: 600 }}>{formatPrice(p25)}</span>
+              <span style={{ color: '#94a3b8', fontSize: '20px', marginBottom: '4px' }}>Minimo</span>
+              <span style={{ color: '#60a5fa', fontSize: '36px', fontWeight: 600 }}>{formatPrice(p25)}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ color: '#94a3b8', fontSize: '30px', marginBottom: '6px' }}>Massimo</span>
-              <span style={{ color: '#fbbf24', fontSize: '54px', fontWeight: 600 }}>{formatPrice(p75)}</span>
+              <span style={{ color: '#94a3b8', fontSize: '20px', marginBottom: '4px' }}>Massimo</span>
+              <span style={{ color: '#fbbf24', fontSize: '36px', fontWeight: 600 }}>{formatPrice(p75)}</span>
             </div>
           </div>
 
@@ -227,30 +228,30 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            paddingBottom: '120px',
-            paddingTop: '60px',
+            paddingBottom: '80px',
+            paddingTop: '40px',
           }}
         >
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '18px',
-              padding: '24px 48px',
-              borderRadius: '24px',
+              gap: '12px',
+              padding: '16px 32px',
+              borderRadius: '16px',
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.1)',
             }}
           >
-            <span style={{ color: '#94a3b8', fontSize: '36px' }}>Valuta anche la tua su</span>
-            <span style={{ color: BRAND_TEAL, fontSize: '36px', fontWeight: 600 }}>vibecar.it</span>
+            <span style={{ color: '#94a3b8', fontSize: '24px' }}>Valuta anche la tua su</span>
+            <span style={{ color: BRAND_TEAL, fontSize: '24px', fontWeight: 600 }}>vibecar.it</span>
           </div>
         </div>
       </div>
     ),
     {
-      width: 1620,
-      height: 2880,
+      width: 1080,
+      height: 1920,
     }
   );
 }
