@@ -183,15 +183,11 @@ export default function Home() {
               <span className="text-xs text-[var(--text-muted)]">&copy; 2026 VibeCar</span>
             </div>
 
-            {/* Disclaimer - center */}
+            {/* Privacy link - center */}
             <div className="text-xs text-[var(--text-muted)] text-center">
-              <p>
-                Valutazione indicativa basata su dati di mercato pubblicamente disponibili.<br className="hidden sm:inline" />
-                Non costituisce offerta di acquisto.
-              </p>
               <a
                 href="/privacy-policy"
-                className="inline-block mt-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors underline"
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors underline"
               >
                 Privacy Policy
               </a>

@@ -638,9 +638,9 @@ export default function ValuationForm() {
         )}
       </button>
 
-      {/* Privacy microcopy */}
+      {/* Disclaimer */}
       <p className="text-xs text-[var(--text-muted)] text-center mt-3">
-        Nessun dato viene salvato senza consenso.
+        Valutazione indicativa basata su dati di mercato. Non costituisce offerta di acquisto.
       </p>
     </form>
   );
