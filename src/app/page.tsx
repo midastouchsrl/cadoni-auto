@@ -94,15 +94,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="relative py-16 md:py-24 border-t border-[var(--obsidian-700)]">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+      {/* Features - Inline layout */}
+      <section className="relative py-12 md:py-16 border-t border-[var(--obsidian-700)]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
             {/* Feature 1 */}
-            <div className="group opacity-0 animate-fade-in-up animate-delay-100">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--obsidian-600)] to-[var(--obsidian-700)] border border-[var(--obsidian-500)] flex items-center justify-center mb-4 group-hover:border-amber-500 transition-colors">
+            <div className="flex items-center gap-3 opacity-0 animate-fade-in-up animate-delay-100">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--obsidian-600)] to-[var(--obsidian-700)] border border-[var(--obsidian-500)] flex items-center justify-center flex-shrink-0">
                 <svg
-                  className="w-6 h-6 text-amber-400"
+                  className="w-5 h-5 text-amber-400"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={1.5}
@@ -115,17 +115,14 @@ export default function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Istantaneo</h3>
-              <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                Il mercato attuale, in pochi secondi.
-              </p>
+              <span className="font-medium text-[var(--text-primary)]">Istantaneo</span>
             </div>
 
             {/* Feature 2 */}
-            <div className="group opacity-0 animate-fade-in-up animate-delay-200">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--obsidian-600)] to-[var(--obsidian-700)] border border-[var(--obsidian-500)] flex items-center justify-center mb-4 group-hover:border-[var(--success)] transition-colors">
+            <div className="flex items-center gap-3 opacity-0 animate-fade-in-up animate-delay-200">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--obsidian-600)] to-[var(--obsidian-700)] border border-[var(--obsidian-500)] flex items-center justify-center flex-shrink-0">
                 <svg
-                  className="w-6 h-6 text-[var(--success)]"
+                  className="w-5 h-5 text-[var(--success)]"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={1.5}
@@ -138,17 +135,14 @@ export default function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Affidabile</h3>
-              <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                Basato su veicoli realmente in vendita, con indicatori di precisione.
-              </p>
+              <span className="font-medium text-[var(--text-primary)]">Affidabile</span>
             </div>
 
             {/* Feature 3 */}
-            <div className="group opacity-0 animate-fade-in-up animate-delay-300">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--obsidian-600)] to-[var(--obsidian-700)] border border-[var(--obsidian-500)] flex items-center justify-center mb-4 group-hover:border-[#6366f1] transition-colors">
+            <div className="flex items-center gap-3 opacity-0 animate-fade-in-up animate-delay-300">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--obsidian-600)] to-[var(--obsidian-700)] border border-[var(--obsidian-500)] flex items-center justify-center flex-shrink-0">
                 <svg
-                  className="w-6 h-6 text-[#818cf8]"
+                  className="w-5 h-5 text-[#818cf8]"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={1.5}
@@ -161,10 +155,7 @@ export default function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Gratuito</h3>
-              <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-                Nessuna registrazione, nessun costo.
-              </p>
+              <span className="font-medium text-[var(--text-primary)]">Gratuito</span>
             </div>
           </div>
         </div>
