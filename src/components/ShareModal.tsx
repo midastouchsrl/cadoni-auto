@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { formatPrice } from '@/lib/robust-stats';
 import { generateShareUrl, getEstimateContext } from '@/lib/analytics';
 
@@ -70,7 +71,13 @@ export default function ShareModal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // For SSR safety, check if we're in browser
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const estimateContext = getEstimateContext();
   const estimateId = estimateContext?.estimate_id || 'unknown';
@@ -103,7 +110,22 @@ export default function ShareModal({
 
     try {
       const response = await fetch(`/api/share-card?${params}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('image')) {
+        throw new Error(`Invalid content type: ${contentType}`);
+      }
+
       const blob = await response.blob();
+
+      if (blob.size === 0) {
+        throw new Error('Empty response');
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -114,6 +136,7 @@ export default function ShareModal({
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
+      alert('Errore nel download. Riprova.');
     }
 
     setDownloading(null);
@@ -139,17 +162,33 @@ export default function ShareModal({
 
     try {
       const response = await fetch(`/api/share-pdf?${params}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('image')) {
+        throw new Error(`Invalid content type: ${contentType}`);
+      }
+
       const blob = await response.blob();
+
+      if (blob.size === 0) {
+        throw new Error('Empty response');
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `valutazione-${carInfo.brand}-${carInfo.model}.png`;
+      a.download = `report-${carInfo.brand}-${carInfo.model}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('PDF download failed:', error);
+      alert('Errore nel download. Riprova.');
     }
 
     setDownloading(null);
@@ -166,9 +205,9 @@ export default function ShareModal({
     window.open(url, '_blank');
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
     >
@@ -179,27 +218,25 @@ export default function ShareModal({
         aria-hidden="true"
       />
 
-      {/* Modal container - centers the modal */}
-      <div className="min-h-full flex items-center justify-center p-4">
-        {/* Modal */}
-        <div className="relative w-full max-w-md bg-[var(--obsidian-800)] rounded-2xl border border-[var(--obsidian-600)] shadow-2xl animate-fade-in-up">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-[var(--obsidian-600)]">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-              Condividi valutazione
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[var(--obsidian-600)] transition-colors"
-              aria-label="Chiudi"
-            >
-              <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+      {/* Modal */}
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-[var(--obsidian-800)] rounded-2xl border border-[var(--obsidian-600)] shadow-2xl animate-fade-in-up">
+        {/* Header */}
+        <div className="sticky top-0 flex items-center justify-between p-4 border-b border-[var(--obsidian-600)] bg-[var(--obsidian-800)] rounded-t-2xl z-10">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+            Condividi valutazione
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-[var(--obsidian-600)] transition-colors"
+            aria-label="Chiudi"
+          >
+            <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Content */}
+        {/* Content */}
           <div className="p-4 space-y-3">
             {/* Summary card */}
             <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
@@ -321,10 +358,11 @@ export default function ShareModal({
                 <span className="text-xs font-medium text-[var(--text-primary)]">Report</span>
                 <span className="text-[10px] text-[var(--text-muted)]">Per trattative</span>
               </button>
-            </div>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
