@@ -12,12 +12,24 @@ import {
   FUEL_TYPES,
   GEARBOX_TYPES,
   CONDITION_TYPES,
+  POWER_RANGES,
 } from '@/lib/config';
 import { trackStartEstimate, startEstimateTiming, trackEstimateFailed } from '@/lib/analytics';
+import SearchableSelect, { toSelectOptions } from './SearchableSelect';
+
+// Convert power ranges to select options format
+const POWER_OPTIONS = POWER_RANGES.map((p) => ({ value: p.value, label: p.label }));
 
 // Pre-compute years at module level to avoid hydration mismatch
 const BASE_YEAR = 2026;
 const YEARS_LIST = Array.from({ length: 35 }, (_, i) => BASE_YEAR - i);
+
+// Convert years to select options format
+const YEAR_OPTIONS = YEARS_LIST.map((y) => ({ value: String(y), label: String(y) }));
+
+// Convert fuel and gearbox to consistent format
+const FUEL_OPTIONS = FUEL_TYPES.map((f) => ({ value: f.value, label: f.label }));
+const GEARBOX_OPTIONS = GEARBOX_TYPES.map((g) => ({ value: g.value, label: g.label }));
 
 interface Model {
   id: number;
@@ -32,18 +44,27 @@ export default function ValuationForm() {
   // Form state
   const [makeId, setMakeId] = useState<number | ''>('');
   const [modelId, setModelId] = useState<number | ''>('');
-  const [year, setYear] = useState('');
+  const [year, setYear] = useState<string | ''>('');
   const [km, setKm] = useState('');
-  const [fuel, setFuel] = useState('');
-  const [gearbox, setGearbox] = useState('');
+  const [fuel, setFuel] = useState<string | ''>('');
+  const [gearbox, setGearbox] = useState<string | ''>('');
   const [condition, setCondition] = useState('normale');
+  const [powerRange, setPowerRange] = useState<string>('');
 
   // Models state
   const [models, setModels] = useState<Model[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
 
-  // Use pre-computed years list
-  const years = useMemo(() => YEARS_LIST, []);
+  // Dynamic fuels state
+  const [availableFuels, setAvailableFuels] = useState<Array<{ value: string; label: string }>>([]);
+  const [loadingFuels, setLoadingFuels] = useState(false);
+  const [fuelsLoaded, setFuelsLoaded] = useState(false);
+
+  // Convert CAR_MAKES to select options format
+  const makeOptions = useMemo(() => toSelectOptions(CAR_MAKES), []);
+
+  // Convert models to select options format
+  const modelOptions = useMemo(() => toSelectOptions(models), [models]);
 
   // Fetch models when make changes
   useEffect(() => {
@@ -75,6 +96,53 @@ export default function ValuationForm() {
     fetchModels();
   }, [makeId]);
 
+  // Fetch available fuels when model changes
+  useEffect(() => {
+    if (!makeId || !modelId) {
+      setAvailableFuels([]);
+      setFuelsLoaded(false);
+      // Reset fuel selection when model changes
+      setFuel('');
+      return;
+    }
+
+    const fetchFuels = async () => {
+      setLoadingFuels(true);
+      setFuel(''); // Reset fuel when loading new options
+
+      try {
+        const response = await fetch(`/api/fuels/${makeId}/${modelId}`);
+        const data = await response.json();
+
+        if (data.fuels && data.fuels.length > 0) {
+          setAvailableFuels(data.fuels);
+          setFuelsLoaded(true);
+        } else {
+          // Fallback to default fuels if no specific ones found
+          setAvailableFuels(FUEL_OPTIONS);
+          setFuelsLoaded(true);
+        }
+      } catch (err) {
+        console.error('Error fetching fuels:', err);
+        // Fallback to default fuels on error
+        setAvailableFuels(FUEL_OPTIONS);
+        setFuelsLoaded(true);
+      } finally {
+        setLoadingFuels(false);
+      }
+    };
+
+    fetchFuels();
+  }, [makeId, modelId]);
+
+  // Compute fuel options: use available fuels if loaded, otherwise default
+  const fuelOptions = useMemo(() => {
+    if (fuelsLoaded && availableFuels.length > 0) {
+      return availableFuels;
+    }
+    return FUEL_OPTIONS;
+  }, [fuelsLoaded, availableFuels]);
+
   // Get selected make and model names for submission
   const getSelectedMakeName = () => {
     const make = CAR_MAKES.find((m) => m.id === makeId);
@@ -104,10 +172,10 @@ export default function ValuationForm() {
     const estimateProps = {
       brand: brandName,
       model: modelName,
-      year: parseInt(year, 10),
+      year: parseInt(String(year), 10),
       km: parseInt(km.replace(/\D/g, ''), 10),
-      fuel,
-      gearbox,
+      fuel: String(fuel),
+      gearbox: String(gearbox),
     };
     trackStartEstimate(estimateProps);
     startEstimateTiming();
@@ -121,11 +189,12 @@ export default function ValuationForm() {
           model: modelName,
           makeId,
           modelId,
-          year: parseInt(year, 10),
+          year: parseInt(String(year), 10),
           km: parseInt(km.replace(/\D/g, ''), 10),
           fuel,
           gearbox,
           condition,
+          powerRange: powerRange || undefined, // Solo se selezionato
         }),
       });
 
@@ -151,7 +220,8 @@ export default function ValuationForm() {
           km,
           fuel,
           gearbox,
-          condition
+          condition,
+          powerRange: powerRange || undefined,
         })
       );
       router.push('/risultato');
@@ -174,73 +244,28 @@ export default function ValuationForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-6">
         <div className="space-y-2">
           <label htmlFor="brand">Marca</label>
-          <div className="relative">
-            <select
-              id="brand"
-              value={makeId}
-              onChange={(e) => setMakeId(e.target.value ? Number(e.target.value) : '')}
-              required
-              className={makeId ? 'text-[var(--text-primary)]' : 'text-[var(--text-placeholder)]'}
-            >
-              <option value="" disabled>Seleziona marca</option>
-              {CAR_MAKES.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchableSelect
+            id="brand"
+            options={makeOptions}
+            value={makeId}
+            onChange={setMakeId}
+            placeholder="Cerca marca..."
+          />
         </div>
 
         <div className="space-y-2">
           <label htmlFor="model">Modello</label>
-          <div className="relative">
-            <select
-              id="model"
-              value={modelId}
-              onChange={(e) => setModelId(e.target.value ? Number(e.target.value) : '')}
-              required
-              disabled={!makeId || loadingModels}
-              className={modelId ? 'text-[var(--text-primary)]' : 'text-[var(--text-placeholder)]'}
-            >
-              <option value="" disabled>
-                {loadingModels
-                  ? 'Caricamento...'
-                  : makeId
-                    ? 'Seleziona modello'
-                    : 'Prima seleziona marca'}
-              </option>
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-            {loadingModels && (
-              <div className="absolute right-10 top-1/2 -translate-y-1/2">
-                <svg
-                  className="animate-spin h-4 w-4 text-blue-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-              </div>
-            )}
-          </div>
+          <SearchableSelect
+            id="model"
+            options={modelOptions}
+            value={modelId}
+            onChange={setModelId}
+            placeholder="Cerca modello..."
+            disabled={!makeId}
+            loading={loadingModels}
+            loadingText="Caricamento..."
+            disabledText="Prima seleziona marca"
+          />
         </div>
       </div>
 
@@ -248,20 +273,13 @@ export default function ValuationForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <div className="space-y-2">
           <label htmlFor="year">Anno immatricolazione</label>
-          <select
+          <SearchableSelect
             id="year"
+            options={YEAR_OPTIONS}
             value={year}
-            onChange={(e) => setYear(e.target.value)}
-            required
-            className={year ? 'text-[var(--text-primary)]' : 'text-[var(--text-placeholder)]'}
-          >
-            <option value="" disabled>Seleziona anno</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+            onChange={setYear}
+            placeholder="Cerca anno..."
+          />
         </div>
 
         <div className="space-y-2">
@@ -280,40 +298,52 @@ export default function ValuationForm() {
       {/* Fuel and Gearbox */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <div className="space-y-2">
-          <label htmlFor="fuel">Alimentazione</label>
-          <select
+          <label htmlFor="fuel">
+            Alimentazione
+            {fuelsLoaded && availableFuels.length > 0 && availableFuels.length < FUEL_OPTIONS.length && (
+              <span className="ml-2 text-xs text-[var(--text-muted)]">
+                ({availableFuels.length} disponibil{availableFuels.length === 1 ? 'e' : 'i'})
+              </span>
+            )}
+          </label>
+          <SearchableSelect
             id="fuel"
+            options={fuelOptions}
             value={fuel}
-            onChange={(e) => setFuel(e.target.value)}
-            required
-            className={fuel ? 'text-[var(--text-primary)]' : 'text-[var(--text-placeholder)]'}
-          >
-            <option value="" disabled>Seleziona alimentazione</option>
-            {FUEL_TYPES.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
+            onChange={setFuel}
+            placeholder="Cerca alimentazione..."
+            disabled={!modelId}
+            loading={loadingFuels}
+            loadingText="Caricamento..."
+            disabledText="Prima seleziona modello"
+          />
         </div>
 
         <div className="space-y-2">
           <label htmlFor="gearbox">Cambio</label>
-          <select
+          <SearchableSelect
             id="gearbox"
+            options={GEARBOX_OPTIONS}
             value={gearbox}
-            onChange={(e) => setGearbox(e.target.value)}
-            required
-            className={gearbox ? 'text-[var(--text-primary)]' : 'text-[var(--text-placeholder)]'}
-          >
-            <option value="" disabled>Seleziona cambio</option>
-            {GEARBOX_TYPES.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
+            onChange={setGearbox}
+            placeholder="Cerca cambio..."
+          />
         </div>
+      </div>
+
+      {/* Power Range */}
+      <div className="space-y-2">
+        <label htmlFor="power">
+          Potenza (CV)
+          <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
+        </label>
+        <SearchableSelect
+          id="power"
+          options={POWER_OPTIONS}
+          value={powerRange}
+          onChange={setPowerRange}
+          placeholder="Non so / Qualsiasi"
+        />
       </div>
 
       {/* Condition */}

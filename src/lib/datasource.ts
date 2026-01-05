@@ -5,9 +5,10 @@
  * per ricerche accurate (inclusi allestimenti AMG, RS, ecc.)
  */
 
-import { CarListing, CarValuationInput, FuelType, GearboxType } from './types';
+import { CarListing, CarValuationInput, FuelType, GearboxType, PowerRangeType } from './types';
 import { valuationCache, generateCacheKey } from './cache';
 import { FUEL_MAP, GEARBOX_MAP } from './autoscout-data';
+import { POWER_RANGES } from './config';
 
 // Mapping marche per URL fallback (quando non abbiamo makeId)
 const BRAND_SLUGS: Record<string, string> = {
@@ -73,6 +74,21 @@ const GEARBOX_SLUGS: Record<GearboxType, string> = {
 };
 
 /**
+ * Ottiene i range HP dalla configurazione
+ */
+function getPowerRangeParams(powerRange?: PowerRangeType): { hpFrom?: number; hpTo?: number } {
+  if (!powerRange) return {};
+
+  const range = POWER_RANGES.find(r => r.value === powerRange);
+  if (!range || (range.hpFrom === 0 && range.hpTo === 0)) return {};
+
+  return {
+    hpFrom: range.hpFrom || undefined,
+    hpTo: range.hpTo || undefined,
+  };
+}
+
+/**
  * Costruisce l'URL di ricerca AutoScout24
  * Usa gli ID quando disponibili per ricerche precise
  */
@@ -82,7 +98,8 @@ function buildSearchUrl(
   yearMax: number,
   kmMin: number,
   kmMax: number,
-  page: number = 1
+  page: number = 1,
+  options?: { skipFuelFilter?: boolean }
 ): string {
   const params = new URLSearchParams({
     'cy': 'I', // Italia
@@ -90,7 +107,6 @@ function buildSearchUrl(
     'fregto': String(yearMax),
     'kmfrom': String(kmMin),
     'kmto': String(kmMax),
-    'fuel': FUEL_SLUGS[input.fuel] || 'B',
     'gear': GEARBOX_SLUGS[input.gearbox] || 'M',
     'sort': 'standard',
     'desc': '0',
@@ -100,6 +116,23 @@ function buildSearchUrl(
     'page': String(page),
     'damaged_listing': 'exclude',
   });
+
+  // Aggiungi filtro carburante solo se non skippiamo
+  if (!options?.skipFuelFilter) {
+    params.set('fuel', FUEL_SLUGS[input.fuel] || 'B');
+  }
+
+  // Aggiungi filtro potenza se presente
+  const powerParams = getPowerRangeParams(input.powerRange);
+  if (powerParams.hpFrom || powerParams.hpTo) {
+    params.set('powertype', 'hp'); // Usa CV invece di kW
+    if (powerParams.hpFrom) {
+      params.set('powerfrom', String(powerParams.hpFrom));
+    }
+    if (powerParams.hpTo) {
+      params.set('powerto', String(powerParams.hpTo));
+    }
+  }
 
   // Se abbiamo makeId e modelId, usa il formato mmm (più preciso)
   if (input.makeId && input.modelId) {
@@ -308,4 +341,81 @@ export async function fetchListingsMultiPage(
 
   console.log(`[Fetch] Totale annunci unici: ${allListings.length}`);
   return allListings;
+}
+
+/**
+ * Recupera le alimentazioni disponibili per un dato modello
+ * Fa una ricerca senza filtro carburante ed estrae i tipi disponibili dagli annunci
+ */
+export async function fetchAvailableFuels(
+  makeId: number,
+  modelId: number
+): Promise<string[]> {
+  console.log(`[Fuels] Ricerca alimentazioni per make ${makeId}, model ${modelId}`);
+
+  // Costruiamo un input minimale per la ricerca
+  const input: CarValuationInput = {
+    brand: '',
+    model: '',
+    makeId,
+    modelId,
+    year: 2020, // Anno medio per ricerca ampia
+    km: 50000,
+    fuel: 'benzina', // Verrà ignorato con skipFuelFilter
+    gearbox: 'manuale',
+  };
+
+  // Finestra ampia: ultimi 10 anni, qualsiasi km
+  const currentYear = new Date().getFullYear();
+  const yearMin = currentYear - 10;
+  const yearMax = currentYear;
+  const kmMin = 0;
+  const kmMax = 200000;
+
+  // Costruisci URL senza filtro carburante
+  const url = buildSearchUrl(input, yearMin, yearMax, kmMin, kmMax, 1, { skipFuelFilter: true });
+  console.log('[Fuels] URL:', url);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept':
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Cache-Control': 'no-cache',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error('[Fuels] Errore HTTP:', response.status);
+      return [];
+    }
+
+    const html = await response.text();
+    const listings = extractListingsFromHtml(html);
+
+    // Estrai i fuel types unici dagli annunci
+    const fuelCodes = new Set<string>();
+    for (const listing of listings) {
+      if (listing.fuelType) {
+        fuelCodes.add(listing.fuelType.toUpperCase());
+      }
+    }
+
+    const fuels = Array.from(fuelCodes).sort();
+    console.log(`[Fuels] Trovate ${fuels.length} alimentazioni:`, fuels);
+
+    return fuels;
+  } catch (error) {
+    console.error('[Fuels] Errore:', error);
+    return [];
+  }
 }

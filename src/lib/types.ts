@@ -14,6 +14,7 @@ export interface CarValuationInput {
   fuel: FuelType;          // Alimentazione
   gearbox: GearboxType;    // Cambio
   condition?: ConditionType; // Condizione veicolo (opzionale)
+  powerRange?: PowerRangeType; // Fascia di potenza (opzionale)
 }
 
 // Tipi alimentazione
@@ -30,6 +31,9 @@ export type GearboxType = 'manuale' | 'automatico';
 
 // Condizione veicolo
 export type ConditionType = 'scarsa' | 'normale' | 'ottima';
+
+// Fasce di potenza
+export type PowerRangeType = '' | 'low' | 'medium-low' | 'medium' | 'medium-high' | 'high';
 
 // Livello confidenza valutazione
 export type ConfidenceLevel = 'bassa' | 'media' | 'alta';

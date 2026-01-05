@@ -98,6 +98,29 @@ export const CONDITION_TYPES = [
   { value: 'ottima', label: 'Ottima', description: 'Tenuta con cura, senza difetti rilevanti' },
 ] as const;
 
+// Fasce di potenza (CV)
+export const POWER_RANGES = [
+  { value: '', label: 'Non so / Qualsiasi', hpFrom: 0, hpTo: 0 },
+  { value: 'low', label: 'Fino a 75 CV', hpFrom: 0, hpTo: 75 },
+  { value: 'medium-low', label: '75 - 120 CV', hpFrom: 75, hpTo: 120 },
+  { value: 'medium', label: '120 - 180 CV', hpFrom: 120, hpTo: 180 },
+  { value: 'medium-high', label: '180 - 250 CV', hpFrom: 180, hpTo: 250 },
+  { value: 'high', label: 'Oltre 250 CV', hpFrom: 250, hpTo: 0 },
+] as const;
+
+// Mapping fuel code AS24 -> label italiano
+export const FUEL_CODE_TO_LABEL: Record<string, { value: string; label: string }> = {
+  'B': { value: 'benzina', label: 'Benzina' },
+  'D': { value: 'diesel', label: 'Diesel' },
+  'L': { value: 'gpl', label: 'GPL' },
+  'M': { value: 'metano', label: 'Metano' },
+  'E': { value: 'elettrica', label: 'Elettrica' },
+  '2': { value: 'ibrida', label: 'Ibrida (Benzina)' },
+  '3': { value: 'ibrida-diesel', label: 'Ibrida (Diesel)' },
+  'C': { value: 'ibrida-plug-in', label: 'Plug-in Hybrid' },
+  'O': { value: 'altro', label: 'Altro' },
+};
+
 // Cache settings
 export const CACHE_CONFIG = {
   // Cache HTTP: 24 ore + 1 ora stale-while-revalidate
