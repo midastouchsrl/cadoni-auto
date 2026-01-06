@@ -30,6 +30,8 @@ function buildQueryHash(input: CarValuationInput, yearMin: number, yearMax: numb
     kmMax,
     fuel: input.fuel,
     gearbox: input.gearbox,
+    variant: input.variant || '',
+    bodyType: input.bodyType || '',
   });
 }
 
@@ -138,7 +140,7 @@ export async function getOrComputeEstimate(
           computed_from: {
             year_window: [yearMin, yearMax],
             km_window: [kmMin, kmMax],
-            filters_applied: [input.fuel, input.gearbox],
+            filters_applied: [input.fuel, input.gearbox, input.variant, input.bodyType].filter(Boolean) as string[],
           },
         };
       }
@@ -193,6 +195,8 @@ export async function getOrComputeEstimate(
           kmMax,
           fuel: input.fuel,
           gearbox: input.gearbox,
+          variant: input.variant,
+          bodyType: input.bodyType,
         },
         source: 'autoscout24',
         nListings: stats.nClean,
@@ -247,7 +251,7 @@ export async function getOrComputeEstimate(
       computed_from: {
         year_window: [yearMin, yearMax],
         km_window: [kmMin, kmMax],
-        filters_applied: [input.fuel, input.gearbox],
+        filters_applied: [input.fuel, input.gearbox, input.variant, input.bodyType].filter(Boolean) as string[],
       },
     };
   }

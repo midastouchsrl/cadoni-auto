@@ -108,6 +108,29 @@ export const POWER_RANGES = [
   { value: 'high', label: 'Oltre 250 CV', hpFrom: 250, hpTo: 0 },
 ] as const;
 
+// Tipi carrozzeria
+export const BODY_TYPES = [
+  { value: '', label: 'Qualsiasi' },
+  { value: 'berlina', label: 'Berlina' },
+  { value: 'sw', label: 'Station Wagon' },
+  { value: 'coupe', label: 'Coupé' },
+  { value: 'suv', label: 'SUV / Crossover' },
+  { value: 'monovolume', label: 'Monovolume' },
+  { value: 'cabrio', label: 'Cabriolet' },
+  { value: 'hatchback', label: 'Hatchback / Utilitaria' },
+] as const;
+
+// Mapping body type value -> slug AutoScout24
+export const BODY_TYPE_SLUGS: Record<string, string> = {
+  'berlina': 'berlina',
+  'sw': 'station-wagon',
+  'coupe': 'coupe',
+  'suv': 'suv',
+  'monovolume': 'monovolume',
+  'cabrio': 'cabrio',
+  'hatchback': 'city-car',
+};
+
 // Mapping fuel code AS24 -> label italiano
 export const FUEL_CODE_TO_LABEL: Record<string, { value: string; label: string }> = {
   'B': { value: 'benzina', label: 'Benzina' },

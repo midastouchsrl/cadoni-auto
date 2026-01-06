@@ -15,6 +15,8 @@ export interface CarValuationInput {
   gearbox: GearboxType;    // Cambio
   condition?: ConditionType; // Condizione veicolo (opzionale)
   powerRange?: PowerRangeType; // Fascia di potenza (opzionale)
+  variant?: string;        // ID variante/modelLineId (es. "4x4", "cross")
+  bodyType?: BodyType;     // Tipo carrozzeria (opzionale)
 }
 
 // Tipi alimentazione
@@ -34,6 +36,16 @@ export type ConditionType = 'scarsa' | 'normale' | 'ottima';
 
 // Fasce di potenza
 export type PowerRangeType = '' | 'low' | 'medium-low' | 'medium' | 'medium-high' | 'high';
+
+// Tipi carrozzeria (body types)
+export type BodyType =
+  | 'berlina'
+  | 'sw'
+  | 'coupe'
+  | 'suv'
+  | 'monovolume'
+  | 'cabrio'
+  | 'hatchback';
 
 // Livello confidenza valutazione
 export type ConfidenceLevel = 'bassa' | 'media' | 'alta';

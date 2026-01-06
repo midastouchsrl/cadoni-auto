@@ -5,7 +5,7 @@
 
 import { CarListing, CarValuationInput, FuelType, GearboxType, PowerRangeType } from '../types';
 import { valuationCache, generateCacheKey } from '../cache';
-import { POWER_RANGES } from '../config';
+import { POWER_RANGES, BODY_TYPE_SLUGS } from '../config';
 import { DataSourceAdapter, SearchParams } from './types';
 
 // Mapping marche per URL fallback (quando non abbiamo makeId)
@@ -133,13 +133,25 @@ function buildSearchUrl(
     if (powerParams.hpTo) params.set('powerto', String(powerParams.hpTo));
   }
 
-  if (input.makeId && input.modelId) {
-    params.set('mmm', `${input.makeId}|${input.modelId}|`);
-    return `https://www.autoscout24.it/lst?${params.toString()}`;
+  // Aggiungi filtro carrozzeria se specificato
+  if (input.bodyType && BODY_TYPE_SLUGS[input.bodyType]) {
+    params.set('body', BODY_TYPE_SLUGS[input.bodyType]);
   }
 
+  // Determina brand/model slug per il path URL
   const brand = BRAND_SLUGS[input.brand.toLowerCase()] || input.brand.toLowerCase().replace(/\s+/g, '-');
   const model = input.model.toLowerCase().replace(/\s+/g, '-');
+
+  // Se abbiamo makeId/modelId e NON c'è variant, usiamo mmm (più preciso)
+  // Se c'è variant, usiamo solo il path con ve_ perché mmm ignora il filtro versione
+  if (input.makeId && input.modelId && !input.variant) {
+    params.set('mmm', `${input.makeId}|${input.modelId}|`);
+  }
+
+  // Costruisci URL con path brand/model (e opzionalmente ve_variant)
+  if (input.variant) {
+    return `https://www.autoscout24.it/lst/${brand}/${model}/ve_${input.variant}?${params.toString()}`;
+  }
 
   return `https://www.autoscout24.it/lst/${brand}/${model}?${params.toString()}`;
 }
@@ -231,6 +243,8 @@ async function fetchPage(
     kmMax,
     fuel: input.fuel,
     gearCode: effectiveGearCode,
+    variant: input.variant || '',
+    bodyType: input.bodyType || '',
     page,
   });
 

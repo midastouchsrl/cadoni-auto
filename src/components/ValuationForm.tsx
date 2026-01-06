@@ -14,6 +14,7 @@ import {
   CONDITION_TYPES,
   POWER_RANGES,
   ITALIAN_REGIONS,
+  BODY_TYPES,
 } from '@/lib/config';
 import { getModelFuels, getFuelDataSource } from '@/lib/model-fuels';
 import {
@@ -42,9 +43,18 @@ const GEARBOX_OPTIONS = GEARBOX_TYPES.map((g) => ({ value: g.value, label: g.lab
 // Convert regions to select options format
 const REGION_OPTIONS = ITALIAN_REGIONS.map((r) => ({ value: r.value, label: r.label }));
 
+// Convert body types to select options format
+const BODY_TYPE_OPTIONS = BODY_TYPES.map((b) => ({ value: b.value, label: b.label }));
+
 interface Model {
   id: number;
   name: string;
+}
+
+interface Variant {
+  id: string | number;
+  name: string;
+  slug?: string;
 }
 
 export default function ValuationForm() {
@@ -62,11 +72,16 @@ export default function ValuationForm() {
   const [condition, setCondition] = useState('normale');
   const [powerRange, setPowerRange] = useState<string>('');
   const [region, setRegion] = useState<string>('');
+  const [variant, setVariant] = useState<string>('');
+  const [bodyType, setBodyType] = useState<string>('');
 
   // Models state
   const [models, setModels] = useState<Model[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
 
+  // Variants state
+  const [availableVariants, setAvailableVariants] = useState<Variant[]>([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
 
   // Dynamic years state
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -158,6 +173,38 @@ export default function ValuationForm() {
     setFuel('');
   }, [makeId, modelId]);
 
+  // Fetch available variants when model changes
+  useEffect(() => {
+    if (!makeId || !modelId) {
+      setAvailableVariants([]);
+      setVariant('');
+      return;
+    }
+
+    const fetchVariants = async () => {
+      setLoadingVariants(true);
+      setVariant(''); // Reset variant when loading new model
+
+      try {
+        const response = await fetch(`/api/variants/${makeId}/${modelId}`);
+        const data = await response.json();
+
+        if (data.variants && data.variants.length > 0) {
+          setAvailableVariants(data.variants);
+        } else {
+          setAvailableVariants([]);
+        }
+      } catch (err) {
+        console.error('Error fetching variants:', err);
+        setAvailableVariants([]);
+      } finally {
+        setLoadingVariants(false);
+      }
+    };
+
+    fetchVariants();
+  }, [makeId, modelId]);
+
   // Compute year options: use available years if loaded, otherwise default
   const yearOptions = useMemo(() => {
     if (yearsLoaded && availableYears.length > 0) {
@@ -185,6 +232,22 @@ export default function ValuationForm() {
     if (!makeId || !modelId) return null;
     return getFuelDataSource(makeId, modelId);
   }, [makeId, modelId]);
+
+  // Compute variant options
+  const variantOptions = useMemo(() => {
+    if (!availableVariants || availableVariants.length === 0) {
+      return [];
+    }
+    // Aggiungi opzione "Qualsiasi" all'inizio
+    const options = [{ value: '', label: 'Qualsiasi variante' }];
+    availableVariants.forEach((v) => {
+      options.push({
+        value: v.slug || String(v.id),
+        label: v.name,
+      });
+    });
+    return options;
+  }, [availableVariants]);
 
   // Get selected make and model names for submission
   const getSelectedMakeName = () => {
@@ -243,6 +306,8 @@ export default function ValuationForm() {
           condition,
           powerRange: powerRange || undefined,
           region: region || undefined,
+          variant: variant || undefined,
+          bodyType: bodyType || undefined,
           // Tracking fields for persistence
           estimate_id: estimateContext?.estimate_id,
           anon_id: anonId,
@@ -276,6 +341,8 @@ export default function ValuationForm() {
           condition,
           powerRange: powerRange || undefined,
           region: region || undefined,
+          variant: variant || undefined,
+          bodyType: bodyType || undefined,
         })
       );
       router.push('/risultato');
@@ -421,6 +488,43 @@ export default function ValuationForm() {
             value={region}
             onChange={setRegion}
             placeholder="Seleziona regione..."
+          />
+        </div>
+      </div>
+
+      {/* Variant and Body Type */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+        {/* Variant - only show if variants are available */}
+        <div className="space-y-2">
+          <label htmlFor="variant">
+            Versione
+            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
+          </label>
+          <SearchableSelect
+            id="variant"
+            options={variantOptions}
+            value={variant}
+            onChange={setVariant}
+            placeholder={loadingVariants ? 'Caricamento...' : 'Qualsiasi variante'}
+            disabled={!modelId || variantOptions.length === 0}
+            loading={loadingVariants}
+            loadingText="Caricamento..."
+            disabledText={!modelId ? 'Prima seleziona modello' : 'Nessuna variante disponibile'}
+          />
+        </div>
+
+        {/* Body Type */}
+        <div className="space-y-2">
+          <label htmlFor="bodyType">
+            Carrozzeria
+            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
+          </label>
+          <SearchableSelect
+            id="bodyType"
+            options={BODY_TYPE_OPTIONS}
+            value={bodyType}
+            onChange={setBodyType}
+            placeholder="Qualsiasi"
           />
         </div>
       </div>

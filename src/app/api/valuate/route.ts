@@ -27,6 +27,8 @@ export async function POST(request: NextRequest) {
       fuel: body.fuel,
       gearbox: body.gearbox,
       condition: body.condition || 'normale',
+      variant: body.variant || undefined,
+      bodyType: body.bodyType || undefined,
     };
 
     // Campi opzionali per tracciamento e persistenza
@@ -72,6 +74,8 @@ export async function POST(request: NextRequest) {
           kmMax: input.km! + Math.round(input.km! * 0.15),
           fuel: input.fuel,
           gearbox: input.gearbox,
+          variant: input.variant || '',
+          bodyType: input.bodyType || '',
         });
 
         await saveEstimate({
@@ -87,6 +91,8 @@ export async function POST(request: NextRequest) {
             gearbox: input.gearbox,
             condition: input.condition,
             region: region || null,
+            variant: input.variant || null,
+            bodyType: input.bodyType || null,
           },
           nTotal: valuationResult.samples_raw || valuationResult.samples,
           nUsed: valuationResult.samples,
