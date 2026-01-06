@@ -8,10 +8,9 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Home() {
   return (
-    <main className="min-h-screen relative overflow-hidden">
-      {/* Background gradient orbs - brand teal */}
-      <div className="gradient-orb gradient-orb-teal w-[600px] h-[600px] -top-[200px] -right-[200px] fixed" />
-      <div className="gradient-orb gradient-orb-teal-muted w-[400px] h-[400px] top-[60%] -left-[100px] fixed" />
+    <main className="min-h-screen relative">
+      {/* Apple-style mesh gradient background */}
+      <div className="apple-gradient" />
 
       {/* Hero Section */}
       <section className="relative pt-8 pb-16 md:pt-16 md:pb-28">
@@ -166,8 +165,8 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6">
           {/* Main footer row - 3 columns on desktop */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            {/* Logo - left */}
-            <div className="flex flex-col items-center md:items-start gap-1">
+            {/* Logo + Copyright - left */}
+            <div className="flex items-center justify-center md:justify-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/brand/logo regular light@600x.png"
@@ -180,7 +179,7 @@ export default function Home() {
                 alt="vibecar"
                 className="h-6 dark:hidden block"
               />
-              <span className="text-xs text-[var(--text-muted)]">&copy; 2026 VibeCar</span>
+              <span className="text-xs text-[var(--text-muted)]">&copy; 2026</span>
             </div>
 
             {/* Privacy link - center */}
