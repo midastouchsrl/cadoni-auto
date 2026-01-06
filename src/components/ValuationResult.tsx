@@ -1,14 +1,13 @@
 'use client';
 
 /**
- * VibeCar Valuation Result Display
- * Premium data-driven result visualization
+ * VibeCar Valuation Result - 2026 Edition
  *
  * Design principles:
- * - Communicate authority without technical jargon
- * - Transform internal numbers into human language
- * - Tell the market story, not the algorithm
- * - Position VibeCar as neutral reference (partner-safe)
+ * - Multi-channel: clear buyer/seller perspectives
+ * - Actionable copy: tell them what to DO, not what it IS
+ * - Zero jargon: human language only
+ * - Premium feel: space, typography, subtle animations
  */
 
 import { useEffect, useState } from 'react';
@@ -23,6 +22,7 @@ import {
 } from '@/lib/analytics';
 import ShareModal from './ShareModal';
 import LeadForm from './LeadForm';
+import PriceDistribution from './PriceDistribution';
 
 interface Props {
   result: ValuationResult;
@@ -37,104 +37,100 @@ interface Props {
   };
 }
 
+type ViewMode = 'buying' | 'selling';
+
 /**
- * Semantic translations - NO technical terms exposed to user
+ * Calculate multi-channel prices based on market median
+ *
+ * COEFFICIENTS DOCUMENTATION (Last verified: January 2026)
+ *
+ * Sources:
+ * - AutoScout24 empirical analysis (Fiat Panda 2018-2022, 50-80k km)
+ * - Eurotax BLU/GIALLO price gap data
+ * - UNRAE dealer margin reports
+ * - comproautobrescia.com, Quattroruote forum industry data
+ *
+ * Key findings:
+ * - Dealer/Private gap: 12-17% verified empirically (Fiat Panda median €9.045 dealer vs €7.500 private = 17%)
+ * - Dealer negotiation margin: 5-10% (€500-1000 on €10k vehicle)
+ * - Private negotiation margin: 8-12% (more flexible)
+ * - Dealer buyback: 20-25% below selling price (they need margin)
+ * - Trade-in premium: +3% vs direct buyback (incentive to buy from them)
+ *
+ * Segment logic:
+ * - Economy (<€15k): Higher % gap because absolute dealer margin (~€1-1.5k) weighs more
+ * - Medium (€15k-30k): Standard margins
+ * - Premium (>€30k): Lower % gap, buyers less price-sensitive, bigger absolute margins
  */
-function getMarketDepth(samples: number): { label: string; description: string } {
-  if (samples >= 40) {
-    return {
-      label: 'Ben rappresentato',
-      description: 'Mercato ben rappresentato',
-    };
-  } else if (samples >= 20) {
-    return {
-      label: 'Sufficientemente rappresentato',
-      description: 'Mercato sufficientemente rappresentato',
-    };
-  } else {
-    return {
-      label: 'Meno uniforme',
-      description: 'Mercato meno uniforme',
-    };
-  }
+function calculateChannelPrices(medianPrice: number) {
+  // Segment detection (economy vs premium affects margins)
+  const isEconomy = medianPrice < 15000;
+  const isPremium = medianPrice > 30000;
+
+  // Coefficients by segment (see documentation above for sources)
+  // Gap = difference between dealer listing and private listing prices
+  const dealerPrivateGap = isEconomy ? 0.15 : isPremium ? 0.10 : 0.12;
+  // Dealer negotiation = typical discount from listed price
+  const dealerNegotiation = isEconomy ? 0.05 : isPremium ? 0.08 : 0.06;
+  // Private negotiation = typical discount from listed price (more flexible)
+  const privateNegotiation = isEconomy ? 0.10 : isPremium ? 0.06 : 0.08;
+
+  // BUYING prices
+  const buyDealerListing = medianPrice;
+  const buyDealerFinal = Math.round(medianPrice * (1 - dealerNegotiation) / 50) * 50;
+  const buyPrivateListing = Math.round(medianPrice * (1 - dealerPrivateGap) / 50) * 50;
+  const buyPrivateFinal = Math.round(buyPrivateListing * (1 - privateNegotiation) / 50) * 50;
+
+  // SELLING prices
+  const sellPrivateListing = buyPrivateListing;
+  const sellPrivateFinal = buyPrivateFinal;
+  // Dealer buyback: 25% below selling price (they need room for reconditioning + margin)
+  const sellDealerOffer = Math.round(medianPrice * 0.75 / 50) * 50;
+  // Trade-in: slightly better (+3%) as incentive to buy from them
+  const sellTradeIn = Math.round(medianPrice * 0.78 / 50) * 50;
+
+  return {
+    buying: {
+      dealer: { listing: buyDealerListing, final: buyDealerFinal },
+      private: { listing: buyPrivateListing, final: buyPrivateFinal },
+    },
+    selling: {
+      toPrivate: { listing: sellPrivateListing, realistic: sellPrivateFinal },
+      toDealer: { offer: sellDealerOffer, tradeIn: sellTradeIn },
+    },
+    savings: {
+      buyingPrivate: buyDealerFinal - buyPrivateFinal,
+      sellingPrivate: sellPrivateFinal - sellDealerOffer,
+    },
+  };
 }
 
-function getPriceDispersion(iqrRatio: number): { label: string; description: string } {
-  if (iqrRatio > 0.25) {
-    return {
-      label: 'Molto variabili',
-      description: 'Prezzi molto variabili',
-    };
-  } else if (iqrRatio > 0.15) {
-    return {
-      label: 'Moderatamente variabili',
-      description: 'Prezzi moderatamente variabili',
-    };
-  } else {
-    return {
-      label: 'Tendenzialmente allineati',
-      description: 'Prezzi tendenzialmente allineati',
-    };
-  }
-}
-
-function getPrecisionLabel(confidence: ConfidenceLevel): string {
+function getConfidenceStyle(confidence: ConfidenceLevel) {
   switch (confidence) {
     case 'alta':
-      return 'Precisione stimata: elevata';
+      return { bg: 'bg-emerald-500/15', text: 'text-emerald-500', label: 'Alta precisione' };
     case 'media':
-      return 'Precisione stimata: buona';
-    case 'bassa':
+      return { bg: 'bg-amber-500/15', text: 'text-amber-500', label: 'Buona precisione' };
     default:
-      return 'Precisione stimata: indicativa';
-  }
-}
-
-function getPrecisionStyle(confidence: ConfidenceLevel) {
-  switch (confidence) {
-    case 'alta':
-      return {
-        bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/30',
-        text: 'text-emerald-400',
-        dot: 'bg-emerald-400',
-      };
-    case 'media':
-      return {
-        bg: 'bg-amber-500/10',
-        border: 'border-amber-500/30',
-        text: 'text-amber-400',
-        dot: 'bg-amber-400',
-      };
-    case 'bassa':
-    default:
-      return {
-        bg: 'bg-blue-500/10',
-        border: 'border-blue-500/30',
-        text: 'text-blue-400',
-        dot: 'bg-blue-400',
-      };
+      return { bg: 'bg-blue-500/15', text: 'text-blue-400', label: 'Stima indicativa' };
   }
 }
 
 export default function ValuationResultDisplay({ result, input }: Props) {
+  const [viewMode, setViewMode] = useState<ViewMode>('buying');
   const [showShareModal, setShowShareModal] = useState(false);
 
-  // Core values - semantic naming
+  // Core values
   const centralValue = result.p50 || result.market_median;
   const rangeMin = result.p25 || result.range_min;
   const rangeMax = result.p75 || result.range_max;
-  const observedMin = result.min_clean || result.range_min;
-  const observedMax = result.max_clean || result.range_max;
   const professionalChannel = result.dealer_buy_price;
 
-  // Semantic translations
-  const marketDepth = getMarketDepth(result.samples);
-  const priceDispersion = getPriceDispersion(result.iqr_ratio || 0);
-  const precisionLabel = getPrecisionLabel(result.confidence);
-  const precisionStyle = getPrecisionStyle(result.confidence);
+  // Calculate all channel prices
+  const prices = calculateChannelPrices(centralValue);
+  const confidenceStyle = getConfidenceStyle(result.confidence);
 
-  // Track estimate completion on mount
+  // Track on mount
   useEffect(() => {
     trackEstimateCompleted({
       brand: input.brand,
@@ -154,7 +150,6 @@ export default function ValuationResultDisplay({ result, input }: Props) {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Share tracking helper
   const handleShare = (type: 'link' | 'image' | 'whatsapp' | 'pdf') => {
     const trackingType = type === 'pdf' ? 'image' : type;
     const shareProps = {
@@ -168,309 +163,370 @@ export default function ValuationResultDisplay({ result, input }: Props) {
     return shareProps;
   };
 
-  // Calculate positions for Market Range Band
-  const totalRange = observedMax - observedMin;
-  const rangeMinPos = ((rangeMin - observedMin) / totalRange) * 100;
-  const rangeMaxPos = ((rangeMax - observedMin) / totalRange) * 100;
-  const centralPos = ((centralValue - observedMin) / totalRange) * 100;
-
-  // For channel comparison, use percentage relative to central value (100%)
-  const professionalPct = (professionalChannel / centralValue) * 100;
-  const marketDirectPct = 100; // centralValue is the reference (100%)
-
   return (
-    <div className="space-y-6">
-      {/* Car info header - compact */}
-      <div className="glass-card p-4 opacity-0 animate-fade-in-up border-l-4 border-l-teal-500">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold truncate text-gray-900 dark:text-white">
-              {input.brand} {input.model}
-            </h2>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
-              <span>{input.year}</span>
-              <span className="w-1 h-1 rounded-full bg-teal-500/50" />
-              <span>{input.km} km</span>
-              <span className="w-1 h-1 rounded-full bg-teal-500/50" />
-              <span className="capitalize">{input.fuel}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-5">
 
       {/* ============================================
-          BLOCCO 1 — HERO PRICE CARD (BRANDING FORTE)
+          HERO: Vehicle + Central Value
           ============================================ */}
-      <div className="relative opacity-0 animate-fade-in-up animate-delay-100">
-        {/* Glow effect background */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/25 via-cyan-500/35 to-teal-500/25 rounded-[24px] blur-xl opacity-75" />
+      <div className="relative opacity-0 animate-fade-in-up">
+        {/* Glow */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/20 via-cyan-500/30 to-teal-500/20 rounded-3xl blur-xl opacity-60" />
 
-        {/* Main card */}
-        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-teal-900/95 via-teal-800/90 to-cyan-900/85 border border-teal-400/30">
-          {/* Animated gradient border glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-teal-400/15 to-transparent animate-[shimmer_3s_infinite]" style={{ backgroundSize: '200% 100%' }} />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-white/10">
+          {/* Top accent */}
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
 
-          {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
-
-          {/* Content */}
-          <div className="relative p-6 md:p-8">
-            {/* Header with brand badge */}
+          <div className="p-6 md:p-8">
+            {/* Vehicle badge */}
             <div className="flex items-center justify-center gap-2 mb-6">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-teal-400/15 border border-teal-400/40">
-                <svg className="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                </svg>
-                <span className="text-sm font-semibold text-teal-200 tracking-wide">VALUTAZIONE VIBECAR</span>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">{input.brand} {input.model}</div>
+                  <div className="text-xs text-slate-400">{input.year} · {input.km} km · {input.fuel}</div>
+                </div>
               </div>
             </div>
 
-            {/* Central value - HERO */}
-            <div className="text-center mb-8">
-              <div className="relative inline-block">
-                {/* Price glow */}
-                <div className="absolute inset-0 text-6xl md:text-7xl font-bold text-teal-300 blur-2xl opacity-50">
-                  {formatPrice(centralValue)}
-                </div>
-                {/* Main price */}
-                <div className="relative text-6xl md:text-7xl font-bold text-white drop-shadow-[0_0_30px_rgba(94,234,212,0.4)]">
-                  {formatPrice(centralValue)}
-                </div>
+            {/* Hero price */}
+            <div className="text-center mb-6">
+              <div className="text-5xl md:text-6xl font-bold text-white mb-2">
+                {formatPrice(centralValue)}
               </div>
-              <p className="text-base text-teal-100/70 mt-4 max-w-sm mx-auto">
-                Valore di mercato stimato
+              <p className="text-sm text-slate-400">
+                Valore di mercato · {result.samples} veicoli analizzati
               </p>
             </div>
 
-            {/* Range bar visual - Multi-color gradient */}
-            <div className="relative mb-6 pt-2">
-              {/* Track container - allows markers to extend above/below */}
-              <div className="relative h-3">
-                {/* Background track */}
-                <div className="absolute inset-0 rounded-full bg-slate-800/80 border border-slate-600/50" />
-
-                {/* Multi-color gradient fill - blue to emerald to amber */}
-                <div
-                  className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-emerald-400 to-amber-500 rounded-full shadow-lg"
-                  style={{
-                    left: `${rangeMinPos}%`,
-                    width: `${rangeMaxPos - rangeMinPos}%`,
-                  }}
-                />
-
-                {/* Min marker (blue) */}
-                <div
-                  className="absolute top-1/2 w-2.5 h-4 bg-blue-400 rounded-sm border border-white/60 shadow-md"
-                  style={{ left: `${rangeMinPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
-                />
-
-                {/* Central marker (emerald) - larger, prominent */}
-                <div
-                  className="absolute top-1/2 w-4 h-5 bg-white rounded-sm shadow-[0_0_12px_rgba(52,211,153,0.7)] border-2 border-emerald-400 z-10"
-                  style={{ left: `${centralPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
-                />
-
-                {/* Max marker (amber) */}
-                <div
-                  className="absolute top-1/2 w-2.5 h-4 bg-amber-400 rounded-sm border border-white/60 shadow-md"
-                  style={{ left: `${rangeMaxPos}%`, transform: 'translateX(-50%) translateY(-50%)' }}
-                />
+            {/* Confidence badge */}
+            <div className="flex justify-center">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${confidenceStyle.bg}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${confidenceStyle.text} bg-current`} />
+                <span className={`text-xs font-medium ${confidenceStyle.text}`}>{confidenceStyle.label}</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {/* Range labels with colors */}
-              <div className="flex justify-between items-start mt-5">
-                <div className="text-left">
-                  <div className="text-lg font-bold text-blue-300">{formatPrice(rangeMin)}</div>
-                  <div className="text-xs text-blue-400/80">Vendita rapida</div>
+      {/* ============================================
+          TAB SWITCHER: Compro / Vendo
+          ============================================ */}
+      <div className="opacity-0 animate-fade-in-up animate-delay-100">
+        <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setViewMode('buying')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold transition-all ${
+              viewMode === 'buying'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+            </svg>
+            Sto comprando
+          </button>
+          <button
+            onClick={() => setViewMode('selling')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold transition-all ${
+              viewMode === 'selling'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Sto vendendo
+          </button>
+        </div>
+      </div>
+
+      {/* ============================================
+          BUYING VIEW
+          ============================================ */}
+      {viewMode === 'buying' && (
+        <div className="space-y-4 opacity-0 animate-fade-in-up animate-delay-150">
+
+          {/* Two channel cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* DEALER CARD */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-5 hover:border-blue-500/50 transition-colors">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+
+              <div className="relative">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Da concessionario</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Garanzia inclusa</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xs text-emerald-400/80">Valore di riferimento</div>
+
+                {/* Prices */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Prezzo esposto</span>
+                    <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">{formatPrice(prices.buying.dealer.listing)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-900 dark:text-white font-medium">Pagherai circa</span>
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatPrice(prices.buying.dealer.final)}</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-amber-300">{formatPrice(rangeMax)}</div>
-                  <div className="text-xs text-amber-400/80">Massimo ottenibile</div>
+
+                {/* Pro/Con */}
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Garanzia 12+ mesi, auto verificata</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Prezzo più alto, meno margine trattativa</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-          </div>
+            {/* PRIVATE CARD */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-5 hover:border-emerald-500/50 transition-colors">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
 
-          {/* Bottom decorative elements */}
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-400/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-24 h-24 bg-cyan-400/10 rounded-full blur-2xl" />
-        </div>
-      </div>
+              {/* Savings badge */}
+              {prices.savings.buyingPrivate > 200 && (
+                <div className="absolute top-4 right-4">
+                  <div className="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      Risparmi {formatPrice(prices.savings.buyingPrivate)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-      {/* ============================================
-          BLOCCO 2 — LETTURA DEL MERCATO (SEMANTICA)
-          ============================================ */}
-      <div className="glass-card p-5 opacity-0 animate-fade-in-up animate-delay-150 border-l-4 border-l-cyan-500/50">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <svg className="w-4 h-4 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Lettura del mercato
-        </h3>
+              <div className="relative">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Da privato</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Prezzo più basso</p>
+                  </div>
+                </div>
 
-        <div className="space-y-4">
-          {/* Market reading - translated insights */}
-          <p className="text-sm text-gray-900 dark:text-white leading-relaxed">
-            {marketDepth.description}, con {priceDispersion.description.toLowerCase()}.
-          </p>
-        </div>
-      </div>
+                {/* Prices */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Prezzo annuncio</span>
+                    <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">{formatPrice(prices.buying.private.listing)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-900 dark:text-white font-medium">Pagherai circa</span>
+                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatPrice(prices.buying.private.final)}</span>
+                  </div>
+                </div>
 
-      {/* ============================================
-          BLOCCO 3 — CANALI DI VENDITA (PARTNER-SAFE)
-          ============================================ */}
-      <div className="glass-card p-5 opacity-0 animate-fade-in-up animate-delay-200 border-l-4 border-l-emerald-500/50">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-          <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
-          </svg>
-          Canali di vendita
-        </h3>
-        <p className="text-xs text-gray-500 dark:text-slate-400 mb-5">
-          Canali diversi implicano condizioni diverse.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1: Mercato diretto */}
-          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-emerald-500/20 hover:border-emerald-500/40 transition-colors">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
+                {/* Pro/Con */}
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Prezzo migliore, più trattabile</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Nessuna garanzia, verifica l&apos;auto bene</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Mercato diretto</span>
-            </div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
-              {formatPrice(centralValue)}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
-              Vendita diretta tra privati o canali aperti, con maggiore variabilità di prezzo.
-            </p>
-          </div>
-
-          {/* Card 2: Canale professionale */}
-          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-blue-500/20 hover:border-blue-500/40 transition-colors">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21" />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Concessionari e rivenditori</span>
-            </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-              {formatPrice(professionalChannel)}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
-              Vendita a concessionari o rivenditori professionisti. Offerta solitamente inferiore, ma con ritiro immediato e zero pensieri.
-            </p>
-          </div>
-        </div>
-
-        <p className="text-xs text-gray-500 dark:text-slate-400 text-center mt-4">
-          Il canale più adatto dipende dalle tue priorità.
-        </p>
-      </div>
-
-      {/* ============================================
-          BLOCCO 4 — CONFRONTO VISIVO DEI CANALI
-          ============================================ */}
-      <div className="glass-card p-5 opacity-0 animate-fade-in-up animate-delay-250 border-l-4 border-l-blue-500/50">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-          </svg>
-          Confronto canali
-        </h3>
-
-        {/* Channel Comparison Chart */}
-        <div className="space-y-4">
-          {/* Mercato diretto */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-600 dark:text-slate-300">Mercato diretto</span>
-              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{formatPrice(centralValue)}</span>
-            </div>
-            <div className="h-3 bg-gray-200 dark:bg-slate-700/50 rounded-full relative overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500/50 to-emerald-400/70 rounded-full"
-                style={{ width: `${marketDirectPct}%` }}
-              />
             </div>
           </div>
 
-          {/* Concessionari e rivenditori */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-600 dark:text-slate-300">Concessionari e rivenditori</span>
-              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{formatPrice(professionalChannel)}</span>
-            </div>
-            <div className="h-3 bg-gray-200 dark:bg-slate-700/50 rounded-full relative overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500/50 to-blue-400/70 rounded-full"
-                style={{ width: `${professionalPct}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <p className="text-xs text-gray-500 dark:text-slate-400 mt-4 text-center">
-          Lo stesso veicolo può collocarsi in fasce diverse a seconda del canale scelto.
-        </p>
-      </div>
-
-      {/* ============================================
-          BLOCCO 5 — COME USARE QUESTA VALUTAZIONE
-          ============================================ */}
-      <div className="glass-card p-5 opacity-0 animate-fade-in-up animate-delay-300 border-l-4 border-l-amber-500/50">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-          </svg>
-          Come usare questa valutazione
-        </h3>
-
-        <ul className="space-y-3">
-          <li className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-teal-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg className="w-3 h-3 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          {/* Tip box */}
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
               </svg>
             </div>
-            <span className="text-sm text-gray-600 dark:text-slate-300">Per confrontare offerte o proposte ricevute</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-teal-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg className="w-3 h-3 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+            <div>
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">Consiglio acquisto</h4>
+              <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
+                Offri il 10% in meno del prezzo esposto. Su un&apos;auto da privato, chiedi sempre il libretto tagliandi e fai un controllo dal meccanico prima di chiudere.
+              </p>
             </div>
-            <span className="text-sm text-gray-600 dark:text-slate-300">Per definire un prezzo coerente con il mercato</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-teal-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg className="w-3 h-3 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            </div>
-            <span className="text-sm text-gray-600 dark:text-slate-300">Per scegliere il canale di vendita più adatto alle tue esigenze</span>
-          </li>
-        </ul>
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================
-          BLOCCO 6 — LEAD FORM (RICHIESTA CONTATTO)
+          SELLING VIEW
+          ============================================ */}
+      {viewMode === 'selling' && (
+        <div className="space-y-4 opacity-0 animate-fade-in-up animate-delay-150">
+
+          {/* Two channel cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* SELL TO PRIVATE */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-5 hover:border-emerald-500/50 transition-colors">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+
+              {/* Best value badge */}
+              <div className="absolute top-4 right-4">
+                <div className="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Massimo ricavo</span>
+                </div>
+              </div>
+
+              <div className="relative">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Vendi a privato</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Guadagno maggiore</p>
+                  </div>
+                </div>
+
+                {/* Prices */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Metti annuncio a</span>
+                    <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">{formatPrice(prices.selling.toPrivate.listing)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-900 dark:text-white font-medium">Chiuderai a circa</span>
+                    <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatPrice(prices.selling.toPrivate.realistic)}</span>
+                  </div>
+                </div>
+
+                {/* Pro/Con */}
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">
+                      +{formatPrice(prices.savings.sellingPrivate)} rispetto al ritiro dealer
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Richiede tempo (2-4 settimane) e gestione trattative</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SELL TO DEALER */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-5 hover:border-blue-500/50 transition-colors">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+
+              <div className="relative">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Vendi a concessionario</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Veloce e senza pensieri</p>
+                  </div>
+                </div>
+
+                {/* Prices */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Offerta ritiro</span>
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatPrice(prices.selling.toDealer.offer)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">Con permuta</span>
+                    <span className="text-lg font-semibold text-slate-600 dark:text-slate-300">{formatPrice(prices.selling.toDealer.tradeIn)}</span>
+                  </div>
+                </div>
+
+                {/* Pro/Con */}
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Vendita immediata, zero burocrazia</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-xs text-slate-600 dark:text-slate-300">Offerta inferiore al mercato privati</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tip box */}
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-300 mb-1">Consiglio vendita</h4>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 leading-relaxed">
+                Foto di qualità e descrizione onesta accelerano la vendita. Chiedi almeno 3 preventivi da concessionari diversi prima di accettare.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================
+          PRICE DISTRIBUTION
+          ============================================ */}
+      <PriceDistribution
+        min_clean={result.min_clean || rangeMin * 0.85}
+        max_clean={result.max_clean || rangeMax * 1.15}
+        p25={rangeMin}
+        p50={centralValue}
+        p75={rangeMax}
+      />
+
+      {/* ============================================
+          LEAD FORM
           ============================================ */}
       <LeadForm
         confidence={result.confidence}
@@ -485,44 +541,37 @@ export default function ValuationResultDisplay({ result, input }: Props) {
       />
 
       {/* ============================================
-          BLOCCO 7 — CTA FINALI
+          CTA SECTION
           ============================================ */}
-      <div className="space-y-3 opacity-0 animate-fade-in-up animate-delay-350">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Nuova valutazione - secondary */}
+      <div className="space-y-3 opacity-0 animate-fade-in-up animate-delay-300">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             href="/"
-            className="btn-secondary flex items-center justify-center gap-2 py-3.5"
+            className="btn-secondary flex items-center justify-center gap-2 py-3"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
-            Nuova valutazione
+            Nuova ricerca
           </Link>
-
-          {/* Condividi - secondary */}
           <button
             onClick={() => {
               handleShare('link');
               setShowShareModal(true);
             }}
-            className="btn-secondary flex items-center justify-center gap-2 py-3.5"
+            className="btn-secondary flex items-center justify-center gap-2 py-3"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
             </svg>
-            Condividi risultato
+            Condividi
           </button>
         </div>
-
-        <p className="text-xs text-gray-500 dark:text-slate-400 text-center">
-          Utile per confronti, trattative o consulenze.
-        </p>
       </div>
 
       {/* Disclaimer */}
-      <p className="text-xs text-gray-500 dark:text-slate-400 text-center opacity-0 animate-fade-in-up animate-delay-400">
-        Valutazione indicativa basata su dati di mercato pubblicamente disponibili. Non costituisce offerta di acquisto.
+      <p className="text-xs text-center text-slate-400 dark:text-slate-500 opacity-0 animate-fade-in-up animate-delay-350">
+        Stime basate su {result.samples} annunci attuali. Non costituisce offerta di acquisto.
       </p>
 
       {/* Share Modal */}
