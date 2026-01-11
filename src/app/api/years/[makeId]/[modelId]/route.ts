@@ -17,7 +17,7 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 // Current year for calculations
 const CURRENT_YEAR = new Date().getFullYear();
-const MIN_YEAR = 1990;
+const MIN_YEAR = 1950;  // Support vintage/classic cars
 
 interface RouteParams {
   params: Promise<{

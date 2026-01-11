@@ -26,10 +26,16 @@ import {
 } from '@/lib/analytics';
 import SearchableSelect, { toSelectOptions } from './SearchableSelect';
 import LoadingScreen from './LoadingScreen';
+import Accordion from './Accordion';
+import { detectFuelFromVariant } from '@/lib/fuel-detector';
 
 // Pre-compute years at module level to avoid hydration mismatch
 const BASE_YEAR = 2026;
-const YEARS_LIST = Array.from({ length: 35 }, (_, i) => BASE_YEAR - i);
+const MIN_YEAR_FALLBACK = 1950;  // Support vintage/classic cars
+const YEARS_LIST = Array.from(
+  { length: BASE_YEAR - MIN_YEAR_FALLBACK + 1 },  // 77 years
+  (_, i) => BASE_YEAR - i
+);
 
 // Convert years to select options format
 const YEAR_OPTIONS = YEARS_LIST.map((y) => ({ value: String(y), label: String(y) }));
@@ -84,6 +90,13 @@ export default function ValuationForm() {
   const [region, setRegion] = useState<string>('');
   const [variant, setVariant] = useState<string>('');
   const [bodyType, setBodyType] = useState<string>('');
+
+  // Auto-detected fuel from variant
+  const [autoDetectedFuel, setAutoDetectedFuel] = useState<{
+    fuel: string;
+    confidence: 'high' | 'medium' | 'low';
+    keyword: string;
+  } | null>(null);
 
   // Models state
   const [models, setModels] = useState<Model[]>([]);
@@ -224,6 +237,49 @@ export default function ValuationForm() {
 
     fetchVariants();
   }, [makeId, modelId]);
+
+  // Auto-detect fuel from variant name
+  useEffect(() => {
+    if (!variant) {
+      setAutoDetectedFuel(null);
+      return;
+    }
+
+    const selectedVariant = availableVariants.find(
+      v => (v.slug || String(v.id)) === variant
+    );
+
+    if (!selectedVariant) {
+      setAutoDetectedFuel(null);
+      return;
+    }
+
+    const detection = detectFuelFromVariant(selectedVariant.name);
+
+    if (detection.detectedFuel && detection.confidence !== 'low') {
+      setAutoDetectedFuel({
+        fuel: detection.detectedFuel,
+        confidence: detection.confidence,
+        keyword: detection.matchedKeyword || '',
+      });
+
+      // Auto-set fuel if high confidence and fuel not already selected
+      if (detection.confidence === 'high' && !fuel) {
+        setFuel(detection.detectedFuel);
+      }
+    } else {
+      setAutoDetectedFuel(null);
+    }
+  }, [variant, availableVariants, fuel]);
+
+  // Count active optional filters for accordion badge
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (variant) count++;
+    if (bodyType) count++;
+    if (region) count++;
+    return count;
+  }, [variant, bodyType, region]);
 
   // Compute year options: use available years if loaded, otherwise default
   const yearOptions = useMemo(() => {
@@ -536,6 +592,17 @@ export default function ValuationForm() {
             disabled={!modelId}
             disabledText="Prima seleziona modello"
           />
+          {/* Auto-detection indicator */}
+          {autoDetectedFuel && fuel === autoDetectedFuel.fuel && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              <span className="text-xs text-blue-400">
+                Rilevato da &quot;{autoDetectedFuel.keyword}&quot;
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -550,57 +617,60 @@ export default function ValuationForm() {
         </div>
       </div>
 
-      {/* Variant, Body Type and Region */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
-        {/* Variant */}
-        <div className="space-y-2">
-          <label htmlFor="variant">
-            Versione
-            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
-          </label>
-          <SearchableSelect
-            id="variant"
-            options={variantOptions}
-            value={variant}
-            onChange={setVariant}
-            placeholder={loadingVariants ? 'Caricamento...' : 'Qualsiasi variante'}
-            disabled={!modelId || variantOptions.length === 0}
-            loading={loadingVariants}
-            loadingText="Caricamento..."
-            disabledText={!modelId ? 'Prima seleziona modello' : 'Nessuna variante disponibile'}
-          />
-        </div>
+      {/* Optional Filters - Collapsible Accordion */}
+      <Accordion
+        title="Filtri avanzati"
+        badge={activeFiltersCount > 0 ? `${activeFiltersCount} attiv${activeFiltersCount === 1 ? 'o' : 'i'}` : undefined}
+        defaultOpen={false}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          {/* Variant */}
+          <div className="space-y-2">
+            <label htmlFor="variant" className="text-sm text-[var(--text-muted)]">
+              Versione
+            </label>
+            <SearchableSelect
+              id="variant"
+              options={variantOptions}
+              value={variant}
+              onChange={setVariant}
+              placeholder={loadingVariants ? 'Caricamento...' : 'Qualsiasi variante'}
+              disabled={!modelId || variantOptions.length === 0}
+              loading={loadingVariants}
+              loadingText="Caricamento..."
+              disabledText={!modelId ? 'Prima seleziona modello' : 'Nessuna variante disponibile'}
+            />
+          </div>
 
-        {/* Body Type */}
-        <div className="space-y-2">
-          <label htmlFor="bodyType">
-            Carrozzeria
-            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
-          </label>
-          <SearchableSelect
-            id="bodyType"
-            options={BODY_TYPE_OPTIONS}
-            value={bodyType}
-            onChange={setBodyType}
-            placeholder="Qualsiasi"
-          />
-        </div>
+          {/* Body Type */}
+          <div className="space-y-2">
+            <label htmlFor="bodyType" className="text-sm text-[var(--text-muted)]">
+              Carrozzeria
+            </label>
+            <SearchableSelect
+              id="bodyType"
+              options={BODY_TYPE_OPTIONS}
+              value={bodyType}
+              onChange={setBodyType}
+              placeholder="Qualsiasi"
+            />
+          </div>
 
-        {/* Region */}
-        <div className="space-y-2">
-          <label htmlFor="region">
-            Regione
-            <span className="ml-2 text-xs text-[var(--text-muted)]">opzionale</span>
-          </label>
-          <SearchableSelect
-            id="region"
-            options={REGION_OPTIONS}
-            value={region}
-            onChange={setRegion}
-            placeholder="Seleziona regione..."
-          />
+          {/* Region */}
+          <div className="space-y-2">
+            <label htmlFor="region" className="text-sm text-[var(--text-muted)]">
+              Regione
+            </label>
+            <SearchableSelect
+              id="region"
+              options={REGION_OPTIONS}
+              value={region}
+              onChange={setRegion}
+              placeholder="Seleziona regione..."
+            />
+          </div>
         </div>
-      </div>
+      </Accordion>
 
       {/* Condition */}
       <div className="space-y-4">

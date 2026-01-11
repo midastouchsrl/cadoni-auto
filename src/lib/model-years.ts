@@ -10,8 +10,8 @@
 // Current year for calculations
 const CURRENT_YEAR = new Date().getFullYear();
 
-// Minimum reasonable year for used cars
-const MIN_YEAR = 1990;
+// Minimum reasonable year for used cars (including vintage/classic cars)
+const MIN_YEAR = 1950;
 
 // Model production years data - VERIFIED IDs from AutoScout24 API
 const MODEL_YEARS: Record<string, Record<string, { start: number; end?: number }>> = {
