@@ -102,6 +102,16 @@ export const CONDITION_TYPES = [
   { value: 'ottima', label: 'Ottima', description: 'Tenuta con cura, senza difetti rilevanti' },
 ] as const;
 
+// Fasce chilometriche
+export const KM_RANGES = [
+  { value: '0-30000', label: 'Meno di 30.000 km', kmMin: 0, kmMax: 30000 },
+  { value: '30000-60000', label: '30.000 - 60.000 km', kmMin: 30000, kmMax: 60000 },
+  { value: '60000-100000', label: '60.000 - 100.000 km', kmMin: 60000, kmMax: 100000 },
+  { value: '100000-150000', label: '100.000 - 150.000 km', kmMin: 100000, kmMax: 150000 },
+  { value: '150000+', label: 'Oltre 150.000 km', kmMin: 150000, kmMax: 500000 },
+  { value: 'exact', label: 'Inserisci km esatto', kmMin: 0, kmMax: 0 },
+] as const;
+
 // Fasce di potenza (CV)
 export const POWER_RANGES = [
   { value: '', label: 'Non so / Qualsiasi', hpFrom: 0, hpTo: 0 },

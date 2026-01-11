@@ -10,7 +10,10 @@ export interface CarValuationInput {
   makeId?: number;         // ID marca AutoScout24 (opzionale, per ricerche precise)
   modelId?: number;        // ID modello AutoScout24 (opzionale, per ricerche precise)
   year: number;            // Anno immatricolazione
-  km: number;              // Chilometraggio
+  km: number;              // Chilometraggio (valore centrale o esatto)
+  kmMin?: number;          // Km minimo (se range selezionato)
+  kmMax?: number;          // Km massimo (se range selezionato)
+  kmRangeType?: KmRangeType; // Tipo di input km usato
   fuel: FuelType;          // Alimentazione
   gearbox: GearboxType;    // Cambio
   condition?: ConditionType; // Condizione veicolo (opzionale)
@@ -50,6 +53,24 @@ export type BodyType =
 // Livello confidenza valutazione
 export type ConfidenceLevel = 'bassa' | 'media' | 'alta';
 
+// Fattore limitante per suggerimenti tattici
+export type LimitingFactor =
+  | 'km_range'      // Range km troppo stretto
+  | 'year_range'    // Anno troppo specifico
+  | 'variant'       // Variante rara
+  | 'rare_car'      // Auto genuinamente rara (F40, ecc.)
+  | 'filters'       // Combinazione filtri troppo restrittiva
+  | null;           // Nessun fattore limitante
+
+// Fascia chilometrica
+export type KmRangeType =
+  | '0-30000'
+  | '30000-60000'
+  | '60000-100000'
+  | '100000-150000'
+  | '150000+'
+  | 'exact';        // Input esatto
+
 // Risultato valutazione API
 export interface ValuationResult {
   // Prezzi principali
@@ -82,6 +103,8 @@ export interface ValuationResult {
   // Affidabilita
   confidence: ConfidenceLevel;
   explanation: string;     // Spiegazione in italiano
+  limiting_factor?: LimitingFactor;      // Fattore che limita la precisione
+  tactical_suggestion?: string;          // Suggerimento tattico per migliorare
 
   // Metadata
   updated_at: string;      // ISO timestamp ultimo aggiornamento

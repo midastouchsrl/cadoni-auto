@@ -110,7 +110,7 @@ export default function LeadForm({ confidence, dealerGap, cached, carInfo }: Lea
       setSuccess(true);
       setLoading(false);
     } catch {
-      setError("Errore di connessione. Riprova.");
+      setError("Connessione temporaneamente non disponibile. Riprova tra qualche istante.");
       setLoading(false);
     }
   };

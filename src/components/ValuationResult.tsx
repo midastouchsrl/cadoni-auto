@@ -210,11 +210,17 @@ export default function ValuationResultDisplay({ result, input }: Props) {
             </div>
 
             {/* Confidence badge */}
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${confidenceStyle.bg}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${confidenceStyle.text} bg-current`} />
                 <span className={`text-xs font-medium ${confidenceStyle.text}`}>{confidenceStyle.label}</span>
               </div>
+              {/* Tactical suggestion for low confidence */}
+              {result.confidence === 'bassa' && result.tactical_suggestion && (
+                <p className="text-xs text-slate-400 text-center max-w-xs">
+                  💡 {result.tactical_suggestion}
+                </p>
+              )}
             </div>
           </div>
         </div>

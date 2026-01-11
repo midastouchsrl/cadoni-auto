@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   const precisionConfig: Record<string, { bg: string; text: string; label: string }> = {
     alta: { bg: '#065f46', text: BRAND_TEAL, label: 'Precisione elevata' },
     media: { bg: '#854d0e', text: '#fbbf24', label: 'Buona precisione' },
-    bassa: { bg: '#991b1b', text: '#f87171', label: 'Stima indicativa' },
+    bassa: { bg: '#1e3a5f', text: '#60a5fa', label: 'Stima indicativa' },
   };
 
   const conf = precisionConfig[confidence] || precisionConfig.media;

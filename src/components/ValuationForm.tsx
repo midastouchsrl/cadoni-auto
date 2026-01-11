@@ -15,6 +15,7 @@ import {
   POWER_RANGES,
   ITALIAN_REGIONS,
   BODY_TYPES,
+  KM_RANGES,
 } from '@/lib/config';
 import { getModelFuels, getFuelDataSource } from '@/lib/model-fuels';
 import {
@@ -47,6 +48,9 @@ const REGION_OPTIONS = ITALIAN_REGIONS.map((r) => ({ value: r.value, label: r.la
 // Convert body types to select options format
 const BODY_TYPE_OPTIONS = BODY_TYPES.map((b) => ({ value: b.value, label: b.label }));
 
+// Convert km ranges to select options format
+const KM_RANGE_OPTIONS = KM_RANGES.map((k) => ({ value: k.value, label: k.label }));
+
 interface Model {
   id: number;
   name: string;
@@ -76,7 +80,8 @@ export default function ValuationForm() {
   const [makeId, setMakeId] = useState<number | ''>('');
   const [modelId, setModelId] = useState<number | ''>('');
   const [year, setYear] = useState<string | ''>('');
-  const [km, setKm] = useState('');
+  const [kmRangeType, setKmRangeType] = useState<string>('60000-100000'); // Default: 60-100k
+  const [exactKm, setExactKm] = useState('');
   const [fuel, setFuel] = useState<string | ''>('');
   const [gearbox, setGearbox] = useState<string | ''>('');
   const [condition, setCondition] = useState('normale');
@@ -282,12 +287,19 @@ export default function ValuationForm() {
       return;
     }
 
+    // Validate km input
+    const kmValues = getKmValues();
+    if (kmRangeType === 'exact' && (!exactKm || kmValues.km === 0)) {
+      setError('Inserisci il chilometraggio');
+      return;
+    }
+
     // Set loading state with car info for premium loading screen
     setLoadingCarInfo({
       brand: brandName,
       model: modelName,
       year: String(year),
-      km: km.replace(/\D/g, ''),
+      km: getDisplayKm(),
       fuel: fuel ? String(fuel) : undefined,
     });
     setLoading(true);
@@ -297,7 +309,7 @@ export default function ValuationForm() {
       brand: brandName,
       model: modelName,
       year: parseInt(String(year), 10),
-      km: parseInt(km.replace(/\D/g, ''), 10),
+      km: kmValues.km,
       fuel: String(fuel),
       gearbox: String(gearbox),
     };
@@ -318,7 +330,10 @@ export default function ValuationForm() {
           makeId,
           modelId,
           year: parseInt(String(year), 10),
-          km: parseInt(km.replace(/\D/g, ''), 10),
+          km: kmValues.km,
+          kmMin: kmValues.kmMin,
+          kmMax: kmValues.kmMax,
+          kmRangeType: kmValues.kmRangeType,
           fuel,
           gearbox,
           condition,
@@ -354,7 +369,7 @@ export default function ValuationForm() {
           makeId,
           modelId,
           year,
-          km,
+          km: getDisplayKm(),
           fuel,
           gearbox,
           condition,
@@ -367,7 +382,7 @@ export default function ValuationForm() {
       router.push('/risultato');
     } catch (err) {
       console.error(err);
-      setError('Errore di connessione. Riprova.');
+      setError('Connessione temporaneamente non disponibile. Riprova tra qualche istante.');
       setLoading(false);
       setLoadingCarInfo(null);
     }
@@ -377,6 +392,42 @@ export default function ValuationForm() {
   const formatKm = (value: string) => {
     const num = value.replace(/\D/g, '');
     return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Get km values from range selection or exact input
+  const getKmValues = () => {
+    if (kmRangeType === 'exact') {
+      const exactValue = parseInt(exactKm.replace(/\D/g, ''), 10) || 0;
+      return {
+        km: exactValue,
+        kmMin: undefined,
+        kmMax: undefined,
+        kmRangeType: 'exact' as const,
+      };
+    }
+
+    const range = KM_RANGES.find((r) => r.value === kmRangeType);
+    if (!range) {
+      return { km: 80000, kmMin: 60000, kmMax: 100000, kmRangeType: '60000-100000' as const };
+    }
+
+    // Midpoint for display/tracking, but actual range for search
+    const midpoint = Math.round((range.kmMin + range.kmMax) / 2);
+    return {
+      km: midpoint,
+      kmMin: range.kmMin,
+      kmMax: range.kmMax,
+      kmRangeType: kmRangeType as '0-30000' | '30000-60000' | '60000-100000' | '100000-150000' | '150000+',
+    };
+  };
+
+  // Get display km for loading screen
+  const getDisplayKm = () => {
+    if (kmRangeType === 'exact') {
+      return exactKm.replace(/\D/g, '');
+    }
+    const range = KM_RANGES.find((r) => r.value === kmRangeType);
+    return range ? range.label : '80.000';
   };
 
   // Show loading screen when loading
@@ -441,14 +492,24 @@ export default function ValuationForm() {
 
         <div className="space-y-2">
           <label htmlFor="km">Chilometraggio</label>
-          <input
-            type="text"
+          <SearchableSelect
             id="km"
-            value={km}
-            onChange={(e) => setKm(formatKm(e.target.value))}
-            placeholder="es. 50.000"
-            required
+            options={KM_RANGE_OPTIONS}
+            value={kmRangeType}
+            onChange={setKmRangeType}
+            placeholder="Seleziona fascia km..."
           />
+          {kmRangeType === 'exact' && (
+            <input
+              type="text"
+              id="exactKm"
+              value={exactKm}
+              onChange={(e) => setExactKm(formatKm(e.target.value))}
+              placeholder="es. 50.000"
+              className="mt-2"
+              autoFocus
+            />
+          )}
         </div>
       </div>
 

@@ -3,19 +3,30 @@
  * Orchestrazione: check cache -> scrape -> compute -> cache -> return
  */
 
-import { CarValuationInput, ValuationResult, ValuationError, ValuationResponse, ConditionType } from './types';
+import { CarValuationInput, ValuationResult, ValuationError, ValuationResponse, ConditionType, LimitingFactor } from './types';
 import { DEFAULT_VALUATION_CONFIG } from './config';
 import { aggregateListings, queueRequest } from './datasources';
 import { computeRobustStats, generateQueryHash, roundToMultiple } from './robust-stats';
 import { getCachedStats, upsertStats, QueryStatsInput } from './db';
 
-// Configurazione fallback
+/**
+ * Tactical suggestions based on limiting factor
+ */
+const TACTICAL_SUGGESTIONS: Record<string, string> = {
+  km_range: 'Prova a selezionare una fascia km più ampia per più risultati',
+  year_range: 'Considera anche annate vicine per una stima più precisa',
+  variant: 'Rimuovi la selezione della versione per confrontare l\'intero modello',
+  filters: 'Prova a rimuovere alcuni filtri opzionali per più risultati',
+  rare_car: '', // Nessun suggerimento per auto rare - è il mercato
+};
+
+// Configurazione fallback con limiting factor associato
 const SEARCH_STRATEGIES = [
-  { yearWindow: 1, kmWindowPercent: 0.15, label: 'stretta' },
-  { yearWindow: 2, kmWindowPercent: 0.15, label: 'anno allargato' },
-  { yearWindow: 2, kmWindowPercent: 0.30, label: 'anno+km allargati' },
-  { yearWindow: 2, kmWindowPercent: 0.30, removeGear: true, label: 'senza cambio' },
-  { yearWindow: 2, kmWindowPercent: 0.30, removeVariant: true, label: 'senza versione' },
+  { yearWindow: 1, kmWindowPercent: 0.15, label: 'stretta', limitingFactor: null as LimitingFactor },
+  { yearWindow: 2, kmWindowPercent: 0.15, label: 'anno allargato', limitingFactor: 'year_range' as LimitingFactor },
+  { yearWindow: 2, kmWindowPercent: 0.30, label: 'anno+km allargati', limitingFactor: 'km_range' as LimitingFactor },
+  { yearWindow: 2, kmWindowPercent: 0.30, removeGear: true, label: 'senza cambio', limitingFactor: 'filters' as LimitingFactor },
+  { yearWindow: 2, kmWindowPercent: 0.30, removeVariant: true, label: 'senza versione', limitingFactor: 'variant' as LimitingFactor },
 ];
 
 /**
@@ -97,9 +108,28 @@ export async function getOrComputeEstimate(
 
     const yearMin = input.year - strategy.yearWindow;
     const yearMax = input.year + strategy.yearWindow;
-    const kmDelta = Math.round(input.km * strategy.kmWindowPercent);
-    const kmMin = Math.max(0, input.km - kmDelta);
-    const kmMax = input.km + kmDelta;
+
+    // Usa range km esplicito se fornito, altrimenti calcola da percentuale
+    let kmMin: number;
+    let kmMax: number;
+    if (input.kmMin !== undefined && input.kmMax !== undefined) {
+      // Range esplicito da form - applica solo allargamento se strategia lo richiede
+      if (strategy.kmWindowPercent > 0.15) {
+        // Allarga il range del 20% su entrambi i lati
+        const rangeSize = input.kmMax - input.kmMin;
+        const expansion = Math.round(rangeSize * 0.2);
+        kmMin = Math.max(0, input.kmMin - expansion);
+        kmMax = input.kmMax + expansion;
+      } else {
+        kmMin = input.kmMin;
+        kmMax = input.kmMax;
+      }
+    } else {
+      // Calcolo tradizionale da km esatto
+      const kmDelta = Math.round(input.km * strategy.kmWindowPercent);
+      kmMin = Math.max(0, input.km - kmDelta);
+      kmMax = input.km + kmDelta;
+    }
 
     // Crea input modificato per questa strategia (rimuovi variant se richiesto)
     const strategyInput = strategy.removeVariant
@@ -126,6 +156,12 @@ export async function getOrComputeEstimate(
         // Calcola prezzi vendita dettagliati
         const tradeInPrice = roundToMultiple((dealerPrice + p50) / 2, 50); // Tra dealer e P50
 
+        // Calcola confidence e limiting factor
+        const confidence = cached.iqr_ratio < 0.25 && cached.n_listings >= 30 ? 'alta' :
+                          cached.iqr_ratio < 0.40 && cached.n_listings >= 10 ? 'media' : 'bassa';
+        const limitingFactor = confidence === 'bassa' ? strategy.limitingFactor : null;
+        const tacticalSuggestion = limitingFactor ? TACTICAL_SUGGESTIONS[limitingFactor] : undefined;
+
         return {
           range_min: p25,
           range_max: p75,
@@ -142,8 +178,9 @@ export async function getOrComputeEstimate(
           n_dealers: cached.n_dealers,
           n_private: cached.n_private,
           iqr_ratio: cached.iqr_ratio,
-          confidence: cached.iqr_ratio < 0.25 && cached.n_listings >= 30 ? 'alta' :
-                     cached.iqr_ratio < 0.40 && cached.n_listings >= 10 ? 'media' : 'bassa',
+          confidence,
+          limiting_factor: limitingFactor,
+          tactical_suggestion: tacticalSuggestion,
           explanation: generateExplanation(
             strategyInput,
             { nClean: cached.n_listings, nDealers: cached.n_dealers, nPrivate: cached.n_private, iqrRatio: cached.iqr_ratio },
@@ -242,6 +279,10 @@ export async function getOrComputeEstimate(
     const dealerPrice = roundToMultiple(p50 * (1 - config.dealerDiscountPercent), 50);
     const tradeInPrice = roundToMultiple((dealerPrice + p50) / 2, 50);
 
+    // Determina limiting factor solo se confidence bassa
+    const limitingFactor = stats.confidence === 'bassa' ? strategy.limitingFactor : null;
+    const tacticalSuggestion = limitingFactor ? TACTICAL_SUGGESTIONS[limitingFactor] : undefined;
+
     return {
       range_min: p25,
       range_max: p75,
@@ -259,6 +300,8 @@ export async function getOrComputeEstimate(
       n_private: stats.nPrivate,
       iqr_ratio: stats.iqrRatio,
       confidence: stats.confidence,
+      limiting_factor: limitingFactor,
+      tactical_suggestion: tacticalSuggestion,
       explanation: generateExplanation(
         strategyInput,
         stats,
@@ -292,24 +335,24 @@ export async function getOrComputeEstimate(
   if (anyListings.length === 0) {
     return {
       error: true,
-      message: `Nessun ${input.brand} ${input.model} trovato in Italia.`,
-      suggestion: 'Questo modello potrebbe non essere disponibile sul mercato italiano.',
+      message: `${input.brand} ${input.model} non disponibile sul mercato`,
+      suggestion: 'Questo modello è molto raro in Italia. Contattaci per una valutazione personalizzata.',
     } as ValuationError;
   }
 
-  // Se c'era una variante specifica, il problema è probabilmente quella
+  // Se c'era una variante specifica, suggerisci alternativa
   if (input.variant) {
     return {
       error: true,
-      message: `La versione "${input.variant}" non ha abbastanza annunci.`,
-      suggestion: `Abbiamo trovato ${anyListings.length} ${input.brand} ${input.model} ma senza questa versione specifica. Prova a non selezionare la versione per una stima più ampia.`,
+      message: `Versione "${input.variant}" rara sul mercato`,
+      suggestion: `Sono disponibili ${anyListings.length} ${input.brand} ${input.model} in altre versioni. Rimuovi la selezione della versione per una stima basata sull'intero mercato.`,
     } as ValuationError;
   }
 
   return {
     error: true,
-    message: 'Nessun annuncio corrisponde ai tuoi criteri.',
-    suggestion: `Esistono ${anyListings.length} annunci di ${input.brand} ${input.model} ma con anno/km diversi. Prova a modificare i parametri.`,
+    message: 'Combinazione anno/km non comune',
+    suggestion: `Abbiamo trovato ${anyListings.length} ${input.brand} ${input.model} con caratteristiche diverse. Modifica anno o chilometraggio per una valutazione più precisa.`,
   } as ValuationError;
 }
 
